@@ -31,6 +31,26 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
+    // File Selection Handler
+    const fileInput = document.getElementById('recruitmentData');
+    const fileLabel = document.querySelector('label[for="recruitmentData"]');
+    const originalLabelContent = fileLabel.innerHTML;
+    
+    fileInput.addEventListener('change', function() {
+        const file = this.files[0];
+        if (file) {
+            fileLabel.innerHTML = `
+                <span class="upload-icon">✅</span>
+                <span><strong>${file.name}</strong></span>
+                <span class="upload-hint">File selected - Ready to upload and analyze</span>
+            `;
+            fileLabel.classList.add('file-selected');
+        } else {
+            fileLabel.innerHTML = originalLabelContent;
+            fileLabel.classList.remove('file-selected');
+        }
+    });
+
     // File Upload Handler
     uploadForm.addEventListener('submit', async function(e) {
         e.preventDefault();

@@ -117,6 +117,16 @@ label[for="recruitmentData"]:hover {
     margin-top: 5px;
 }
 
+label[for="recruitmentData"].file-selected {
+    background: var(--success);
+    border-color: var(--success);
+    color: white;
+}
+
+label[for="recruitmentData"].file-selected .upload-hint {
+    color: rgba(255, 255, 255, 0.9);
+}
+
 .btn-primary {
     background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
     color: white;
