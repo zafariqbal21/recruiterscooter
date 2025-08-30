@@ -72,7 +72,7 @@ function parseRecruitmentData(filePath) {
       'noOfPosition': ['no of position', 'number of positions', 'positions count'],
       'requisitionLoggedDate': ['requisition logged date', 'logged date', 'req date', 'start date'],
       'numberOfCVs': ['number of cvs', 'cvs', 'cv count', 'resumes'],
-      'positionOnHoldDate': ['position on hold date', 'on hold date', 'hold date'],
+      'positionOnHoldDate': ['position on hold date', 'on hold date', 'hold date', 'position on hold', 'onhold date', 'on-hold date'],
       'days': ['days', 'duration', 'days taken'],
       'remarks': ['remarks', 'comments', 'notes']
     };
@@ -86,10 +86,15 @@ function parseRecruitmentData(filePath) {
       for (const [fieldName, possibleNames] of Object.entries(expectedHeaders)) {
         if (possibleNames.some(name => normalizedHeader.includes(name) || name.includes(normalizedHeader))) {
           headerMapping[fieldName] = index;
+          console.log(`Mapped "${header}" to field "${fieldName}" at index ${index}`);
           break;
         }
       }
     });
+    
+    // Debug log to help troubleshoot header mapping
+    console.log('Raw Headers:', rawHeaders);
+    console.log('Header Mapping:', headerMapping);
     
     // Helper function to convert Excel date serial to JS Date
     function convertExcelDate(excelDate) {
