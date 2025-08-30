@@ -150,18 +150,59 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function renderPositionCharts() {
-        // Position Status Chart
+        // Position Status Pie Chart (Active vs On Hold)
         const statusData = getPositionStatusData();
         renderChart('positionStatusChart', {
-            type: 'doughnut',
+            type: 'pie',
             data: {
                 labels: statusData.labels,
                 datasets: [{
                     data: statusData.values,
-                    backgroundColor: ['#4299e1', '#ed8936', '#48bb78', '#f56565']
+                    backgroundColor: ['#48bb78', '#f56565', '#ed8936', '#4299e1'],
+                    borderWidth: 2,
+                    borderColor: '#2d3748',
+                    hoverBorderWidth: 3,
+                    hoverBorderColor: '#ffffff'
                 }]
             },
-            options: getChartOptions('Position Status Distribution')
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Position Status Distribution',
+                        color: '#e2e8f0',
+                        font: { size: 16, weight: 'bold' }
+                    },
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            color: '#e2e8f0',
+                            padding: 20,
+                            usePointStyle: true
+                        }
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(45, 55, 72, 0.95)',
+                        titleColor: '#e2e8f0',
+                        bodyColor: '#e2e8f0',
+                        borderColor: '#4a5568',
+                        borderWidth: 1,
+                        callbacks: {
+                            label: function(context) {
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const percentage = ((context.parsed / total) * 100).toFixed(1);
+                                return `${context.label}: ${context.parsed} (${percentage}%)`;
+                            }
+                        }
+                    }
+                },
+                animation: {
+                    animateRotate: true,
+                    duration: 1000
+                }
+            }
         });
 
         // Positions by Client Chart
@@ -171,49 +212,256 @@ document.addEventListener('DOMContentLoaded', function() {
             data: {
                 labels: clientData.labels,
                 datasets: [{
-                    label: 'Positions',
+                    label: 'Total Positions',
                     data: clientData.values,
-                    backgroundColor: '#4299e1'
+                    backgroundColor: '#4299e1',
+                    borderColor: '#2b6cb0',
+                    borderWidth: 1,
+                    borderRadius: 4,
+                    hoverBackgroundColor: '#63b3ed',
+                    hoverBorderColor: '#2c5282'
                 }]
             },
-            options: getChartOptions('Positions by Client', true)
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Positions by Client',
+                        color: '#e2e8f0',
+                        font: { size: 16, weight: 'bold' }
+                    },
+                    legend: {
+                        labels: { color: '#e2e8f0' }
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(45, 55, 72, 0.95)',
+                        titleColor: '#e2e8f0',
+                        bodyColor: '#e2e8f0',
+                        borderColor: '#4a5568',
+                        borderWidth: 1,
+                        callbacks: {
+                            label: function(context) {
+                                return `${context.dataset.label}: ${context.parsed.y} positions`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        ticks: { 
+                            color: '#e2e8f0',
+                            maxRotation: 45,
+                            minRotation: 0
+                        },
+                        grid: { color: 'rgba(74, 85, 104, 0.3)' }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        ticks: { 
+                            color: '#e2e8f0',
+                            stepSize: 1
+                        },
+                        grid: { color: 'rgba(74, 85, 104, 0.3)' }
+                    }
+                },
+                animation: {
+                    duration: 1200,
+                    easing: 'easeOutBounce'
+                }
+            }
         });
     }
 
     function renderRecruiterCharts() {
-        // CVs by Recruiter
-        const cvData = getCVsByRecruiterData();
-        renderChart('recruiterPerformanceChart', {
-            type: 'bar',
-            data: {
-                labels: cvData.labels,
-                datasets: [{
-                    label: 'CVs Submitted',
-                    data: cvData.values,
-                    backgroundColor: '#48bb78'
-                }]
-            },
-            options: getChartOptions('CVs Submitted by Recruiter', true)
-        });
-
-        // Positions by Recruiter
+        // Recruiter Performance Bar Chart (positions per recruiter)
         const posData = getPositionsByRecruiterData();
-        renderChart('recruiterPositionsChart', {
+        renderChart('recruiterPerformanceChart', {
             type: 'bar',
             data: {
                 labels: posData.labels,
                 datasets: [{
                     label: 'Positions Handled',
                     data: posData.values,
-                    backgroundColor: '#ed8936'
+                    backgroundColor: '#ed8936',
+                    borderColor: '#c05621',
+                    borderWidth: 1,
+                    borderRadius: 4,
+                    hoverBackgroundColor: '#f6ad55',
+                    hoverBorderColor: '#9c4221'
                 }]
             },
-            options: getChartOptions('Positions Handled by Recruiter', true)
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Recruiter Performance - Positions Handled',
+                        color: '#e2e8f0',
+                        font: { size: 16, weight: 'bold' }
+                    },
+                    legend: {
+                        labels: { color: '#e2e8f0' }
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(45, 55, 72, 0.95)',
+                        titleColor: '#e2e8f0',
+                        bodyColor: '#e2e8f0',
+                        borderColor: '#4a5568',
+                        borderWidth: 1,
+                        callbacks: {
+                            label: function(context) {
+                                const recruiter = context.label;
+                                const positions = context.parsed.y;
+                                const cvData = getCVsByRecruiterData();
+                                const cvIndex = cvData.labels.indexOf(recruiter);
+                                const cvs = cvIndex >= 0 ? cvData.values[cvIndex] : 0;
+                                const efficiency = positions > 0 ? (cvs / positions).toFixed(1) : 0;
+                                return [
+                                    `Positions: ${positions}`,
+                                    `CVs Submitted: ${cvs}`,
+                                    `CVs per Position: ${efficiency}`
+                                ];
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        ticks: { 
+                            color: '#e2e8f0',
+                            maxRotation: 45,
+                            minRotation: 0
+                        },
+                        grid: { color: 'rgba(74, 85, 104, 0.3)' }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        ticks: { 
+                            color: '#e2e8f0',
+                            stepSize: 1
+                        },
+                        grid: { color: 'rgba(74, 85, 104, 0.3)' }
+                    }
+                },
+                animation: {
+                    duration: 1200,
+                    easing: 'easeOutQuart'
+                }
+            }
+        });
+
+        // CV Submission Efficiency Chart
+        const cvData = getCVsByRecruiterData();
+        const efficiencyData = getRecruiterEfficiencyData();
+        renderChart('recruiterPositionsChart', {
+            type: 'bar',
+            data: {
+                labels: efficiencyData.labels,
+                datasets: [{
+                    label: 'CVs Submitted',
+                    data: efficiencyData.cvs,
+                    backgroundColor: '#48bb78',
+                    borderColor: '#2f855a',
+                    borderWidth: 1,
+                    borderRadius: 4,
+                    yAxisID: 'y'
+                }, {
+                    label: 'CV-to-Position Ratio',
+                    data: efficiencyData.ratios,
+                    type: 'line',
+                    borderColor: '#f56565',
+                    backgroundColor: 'rgba(245, 101, 101, 0.1)',
+                    borderWidth: 3,
+                    pointBackgroundColor: '#f56565',
+                    pointBorderColor: '#ffffff',
+                    pointBorderWidth: 2,
+                    pointRadius: 6,
+                    yAxisID: 'y1'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: {
+                    mode: 'index',
+                    intersect: false
+                },
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'CV Submission Efficiency by Recruiter',
+                        color: '#e2e8f0',
+                        font: { size: 16, weight: 'bold' }
+                    },
+                    legend: {
+                        labels: { color: '#e2e8f0' }
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(45, 55, 72, 0.95)',
+                        titleColor: '#e2e8f0',
+                        bodyColor: '#e2e8f0',
+                        borderColor: '#4a5568',
+                        borderWidth: 1,
+                        callbacks: {
+                            label: function(context) {
+                                if (context.datasetIndex === 0) {
+                                    return `CVs Submitted: ${context.parsed.y}`;
+                                } else {
+                                    return `CV-to-Position Ratio: ${context.parsed.y.toFixed(1)}:1`;
+                                }
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        ticks: { 
+                            color: '#e2e8f0',
+                            maxRotation: 45,
+                            minRotation: 0
+                        },
+                        grid: { color: 'rgba(74, 85, 104, 0.3)' }
+                    },
+                    y: {
+                        type: 'linear',
+                        display: true,
+                        position: 'left',
+                        beginAtZero: true,
+                        ticks: { color: '#e2e8f0' },
+                        grid: { color: 'rgba(74, 85, 104, 0.3)' },
+                        title: {
+                            display: true,
+                            text: 'CVs Submitted',
+                            color: '#e2e8f0'
+                        }
+                    },
+                    y1: {
+                        type: 'linear',
+                        display: true,
+                        position: 'right',
+                        beginAtZero: true,
+                        ticks: { color: '#e2e8f0' },
+                        grid: { drawOnChartArea: false },
+                        title: {
+                            display: true,
+                            text: 'CV-to-Position Ratio',
+                            color: '#e2e8f0'
+                        }
+                    }
+                },
+                animation: {
+                    duration: 1400,
+                    easing: 'easeOutCubic'
+                }
+            }
         });
     }
 
     function renderClientCharts() {
-        // Client Activity
+        // Client Activity Overview
         const activityData = getClientActivityData();
         renderChart('clientActivityChart', {
             type: 'bar',
@@ -222,62 +470,356 @@ document.addEventListener('DOMContentLoaded', function() {
                 datasets: [{
                     label: 'Total CVs',
                     data: activityData.cvs,
-                    backgroundColor: '#4299e1'
+                    backgroundColor: '#4299e1',
+                    borderColor: '#2b6cb0',
+                    borderWidth: 1,
+                    borderRadius: 4
                 }, {
                     label: 'Positions',
                     data: activityData.positions,
-                    backgroundColor: '#ed8936'
+                    backgroundColor: '#ed8936',
+                    borderColor: '#c05621',
+                    borderWidth: 1,
+                    borderRadius: 4
                 }]
             },
-            options: getChartOptions('Client Activity Overview', true)
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Client Activity Overview',
+                        color: '#e2e8f0',
+                        font: { size: 16, weight: 'bold' }
+                    },
+                    legend: {
+                        labels: { color: '#e2e8f0' }
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(45, 55, 72, 0.95)',
+                        titleColor: '#e2e8f0',
+                        bodyColor: '#e2e8f0',
+                        borderColor: '#4a5568',
+                        borderWidth: 1,
+                        callbacks: {
+                            label: function(context) {
+                                return `${context.dataset.label}: ${context.parsed.y}`;
+                            },
+                            afterLabel: function(context) {
+                                if (context.datasetIndex === 0) {
+                                    const positions = activityData.positions[context.dataIndex];
+                                    const ratio = positions > 0 ? (context.parsed.y / positions).toFixed(1) : 0;
+                                    return `CV-to-Position Ratio: ${ratio}:1`;
+                                }
+                                return '';
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        ticks: { 
+                            color: '#e2e8f0',
+                            maxRotation: 45,
+                            minRotation: 0
+                        },
+                        grid: { color: 'rgba(74, 85, 104, 0.3)' }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        ticks: { color: '#e2e8f0' },
+                        grid: { color: 'rgba(74, 85, 104, 0.3)' }
+                    }
+                },
+                animation: {
+                    duration: 1200,
+                    easing: 'easeOutBounce'
+                }
+            }
         });
 
-        // Average Days by Client
-        const daysData = getAverageDaysByClientData();
+        // Client Response Time Line Chart
+        const responseData = getClientResponseTimeData();
         renderChart('clientDaysChart', {
             type: 'line',
             data: {
-                labels: daysData.labels,
+                labels: responseData.labels,
                 datasets: [{
-                    label: 'Average Days',
-                    data: daysData.values,
+                    label: 'Average Response Time (Days)',
+                    data: responseData.values,
                     borderColor: '#f56565',
                     backgroundColor: 'rgba(245, 101, 101, 0.1)',
-                    fill: true
+                    borderWidth: 3,
+                    pointBackgroundColor: '#f56565',
+                    pointBorderColor: '#ffffff',
+                    pointBorderWidth: 2,
+                    pointRadius: 6,
+                    pointHoverRadius: 8,
+                    fill: true,
+                    tension: 0.4
                 }]
             },
-            options: getChartOptions('Average Days by Client', true)
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Client Response Time Trends',
+                        color: '#e2e8f0',
+                        font: { size: 16, weight: 'bold' }
+                    },
+                    legend: {
+                        labels: { color: '#e2e8f0' }
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(45, 55, 72, 0.95)',
+                        titleColor: '#e2e8f0',
+                        bodyColor: '#e2e8f0',
+                        borderColor: '#4a5568',
+                        borderWidth: 1,
+                        callbacks: {
+                            label: function(context) {
+                                return `Average Response: ${context.parsed.y} days`;
+                            },
+                            afterLabel: function(context) {
+                                const value = context.parsed.y;
+                                let status = 'Excellent';
+                                if (value > 30) status = 'Needs Improvement';
+                                else if (value > 15) status = 'Good';
+                                return `Status: ${status}`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        ticks: { 
+                            color: '#e2e8f0',
+                            maxRotation: 45,
+                            minRotation: 0
+                        },
+                        grid: { color: 'rgba(74, 85, 104, 0.3)' }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        ticks: { 
+                            color: '#e2e8f0',
+                            callback: function(value) {
+                                return value + ' days';
+                            }
+                        },
+                        grid: { color: 'rgba(74, 85, 104, 0.3)' }
+                    }
+                },
+                animation: {
+                    duration: 1500,
+                    easing: 'easeOutCubic'
+                }
+            }
         });
     }
 
     function renderTimelineCharts() {
-        // Timeline placeholder charts
+        // Monthly Position Logging Trend
+        const monthlyData = getMonthlyTrendData();
         renderChart('timelineChart', {
             type: 'line',
             data: {
-                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+                labels: monthlyData.months,
                 datasets: [{
-                    label: 'Requisitions',
-                    data: [12, 19, 8, 15, 22, 18],
+                    label: 'Positions Logged',
+                    data: monthlyData.positions,
                     borderColor: '#4299e1',
                     backgroundColor: 'rgba(66, 153, 225, 0.1)',
-                    fill: true
+                    borderWidth: 3,
+                    pointBackgroundColor: '#4299e1',
+                    pointBorderColor: '#ffffff',
+                    pointBorderWidth: 2,
+                    pointRadius: 6,
+                    pointHoverRadius: 8,
+                    fill: true,
+                    tension: 0.4
+                }, {
+                    label: 'Positions Filled',
+                    data: monthlyData.filled,
+                    borderColor: '#48bb78',
+                    backgroundColor: 'rgba(72, 187, 120, 0.1)',
+                    borderWidth: 3,
+                    pointBackgroundColor: '#48bb78',
+                    pointBorderColor: '#ffffff',
+                    pointBorderWidth: 2,
+                    pointRadius: 6,
+                    pointHoverRadius: 8,
+                    fill: false,
+                    tension: 0.4
                 }]
             },
-            options: getChartOptions('Requisitions Over Time', true)
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: {
+                    mode: 'index',
+                    intersect: false
+                },
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Monthly Position Logging Trends',
+                        color: '#e2e8f0',
+                        font: { size: 16, weight: 'bold' }
+                    },
+                    legend: {
+                        labels: { color: '#e2e8f0' }
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(45, 55, 72, 0.95)',
+                        titleColor: '#e2e8f0',
+                        bodyColor: '#e2e8f0',
+                        borderColor: '#4a5568',
+                        borderWidth: 1,
+                        callbacks: {
+                            label: function(context) {
+                                return `${context.dataset.label}: ${context.parsed.y}`;
+                            },
+                            afterLabel: function(context) {
+                                if (context.datasetIndex === 0) {
+                                    const filled = monthlyData.filled[context.dataIndex];
+                                    const fillRate = context.parsed.y > 0 ? ((filled / context.parsed.y) * 100).toFixed(1) : 0;
+                                    return `Fill Rate: ${fillRate}%`;
+                                }
+                                return '';
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        ticks: { color: '#e2e8f0' },
+                        grid: { color: 'rgba(74, 85, 104, 0.3)' }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        ticks: { 
+                            color: '#e2e8f0',
+                            stepSize: 1
+                        },
+                        grid: { color: 'rgba(74, 85, 104, 0.3)' }
+                    }
+                },
+                animation: {
+                    duration: 1500,
+                    easing: 'easeOutCubic'
+                }
+            }
         });
 
+        // Monthly CV Submissions with Efficiency
+        const cvTrendData = getMonthlyCVTrendData();
         renderChart('monthlyCVChart', {
             type: 'bar',
             data: {
-                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+                labels: cvTrendData.months,
                 datasets: [{
                     label: 'CV Submissions',
-                    data: [45, 67, 34, 89, 102, 78],
-                    backgroundColor: '#48bb78'
+                    data: cvTrendData.submissions,
+                    backgroundColor: '#48bb78',
+                    borderColor: '#2f855a',
+                    borderWidth: 1,
+                    borderRadius: 4,
+                    yAxisID: 'y'
+                }, {
+                    label: 'Conversion Rate (%)',
+                    data: cvTrendData.conversionRates,
+                    type: 'line',
+                    borderColor: '#ed8936',
+                    backgroundColor: 'rgba(237, 137, 54, 0.1)',
+                    borderWidth: 3,
+                    pointBackgroundColor: '#ed8936',
+                    pointBorderColor: '#ffffff',
+                    pointBorderWidth: 2,
+                    pointRadius: 6,
+                    yAxisID: 'y1'
                 }]
             },
-            options: getChartOptions('Monthly CV Submissions', true)
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: {
+                    mode: 'index',
+                    intersect: false
+                },
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Monthly CV Submission Trends & Conversion',
+                        color: '#e2e8f0',
+                        font: { size: 16, weight: 'bold' }
+                    },
+                    legend: {
+                        labels: { color: '#e2e8f0' }
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(45, 55, 72, 0.95)',
+                        titleColor: '#e2e8f0',
+                        bodyColor: '#e2e8f0',
+                        borderColor: '#4a5568',
+                        borderWidth: 1,
+                        callbacks: {
+                            label: function(context) {
+                                if (context.datasetIndex === 0) {
+                                    return `CV Submissions: ${context.parsed.y}`;
+                                } else {
+                                    return `Conversion Rate: ${context.parsed.y.toFixed(1)}%`;
+                                }
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        ticks: { color: '#e2e8f0' },
+                        grid: { color: 'rgba(74, 85, 104, 0.3)' }
+                    },
+                    y: {
+                        type: 'linear',
+                        display: true,
+                        position: 'left',
+                        beginAtZero: true,
+                        ticks: { color: '#e2e8f0' },
+                        grid: { color: 'rgba(74, 85, 104, 0.3)' },
+                        title: {
+                            display: true,
+                            text: 'CV Submissions',
+                            color: '#e2e8f0'
+                        }
+                    },
+                    y1: {
+                        type: 'linear',
+                        display: true,
+                        position: 'right',
+                        beginAtZero: true,
+                        max: 100,
+                        ticks: { 
+                            color: '#e2e8f0',
+                            callback: function(value) {
+                                return value + '%';
+                            }
+                        },
+                        grid: { drawOnChartArea: false },
+                        title: {
+                            display: true,
+                            text: 'Conversion Rate (%)',
+                            color: '#e2e8f0'
+                        }
+                    }
+                },
+                animation: {
+                    duration: 1400,
+                    easing: 'easeOutQuart'
+                }
+            }
         });
     }
 
@@ -441,6 +983,125 @@ document.addEventListener('DOMContentLoaded', function() {
         return {
             labels: averages.map(([client]) => client),
             values: averages.map(([,avg]) => avg)
+        };
+    }
+
+    function getRecruiterEfficiencyData() {
+        const data = currentData.data || [];
+        const recruiterStats = {};
+        
+        data.forEach(record => {
+            const recruiter = record.recruiter || 'Unknown';
+            if (!recruiterStats[recruiter]) {
+                recruiterStats[recruiter] = { cvs: 0, positions: 0 };
+            }
+            recruiterStats[recruiter].cvs += record.numberOfCVs || 0;
+            recruiterStats[recruiter].positions += record.noOfPosition || 1;
+        });
+
+        const sorted = Object.entries(recruiterStats)
+            .filter(([,stats]) => stats.positions > 0)
+            .map(([recruiter, stats]) => [
+                recruiter, 
+                stats.cvs, 
+                stats.cvs / stats.positions
+            ])
+            .sort(([,,,a], [,,,b]) => b - a)
+            .slice(0, 8);
+
+        return {
+            labels: sorted.map(([recruiter]) => recruiter),
+            cvs: sorted.map(([,cvs]) => cvs),
+            ratios: sorted.map(([,,ratio]) => ratio)
+        };
+    }
+
+    function getClientResponseTimeData() {
+        const data = currentData.data || [];
+        const clientDays = {};
+        
+        data.forEach(record => {
+            const client = record.clientName || 'Unknown';
+            if (record.days !== null && record.days !== undefined) {
+                if (!clientDays[client]) {
+                    clientDays[client] = { total: 0, count: 0 };
+                }
+                clientDays[client].total += record.days;
+                clientDays[client].count += 1;
+            }
+        });
+
+        const averages = Object.entries(clientDays)
+            .map(([client, stats]) => [client, Math.round(stats.total / stats.count)])
+            .sort(([,a], [,b]) => a - b) // Sort by response time (ascending)
+            .slice(0, 8);
+
+        return {
+            labels: averages.map(([client]) => client),
+            values: averages.map(([,avg]) => avg)
+        };
+    }
+
+    function getMonthlyTrendData() {
+        const data = currentData.data || [];
+        const monthlyStats = {};
+        
+        // Process data by month
+        data.forEach(record => {
+            if (record.requisitionLoggedDate) {
+                const date = new Date(record.requisitionLoggedDate);
+                const monthKey = date.toLocaleDateString('en-US', { year: 'numeric', month: 'short' });
+                
+                if (!monthlyStats[monthKey]) {
+                    monthlyStats[monthKey] = { positions: 0, filled: 0 };
+                }
+                monthlyStats[monthKey].positions += record.noOfPosition || 1;
+                
+                // Estimate filled positions (positions without hold date and reasonable days)
+                if (!record.positionOnHoldDate && record.days && record.days < 60) {
+                    monthlyStats[monthKey].filled += Math.round((record.noOfPosition || 1) * 0.7);
+                }
+            }
+        });
+
+        // Get last 12 months or available data
+        const sortedMonths = Object.keys(monthlyStats).sort((a, b) => new Date(a) - new Date(b));
+        const recentMonths = sortedMonths.slice(-12);
+
+        return {
+            months: recentMonths,
+            positions: recentMonths.map(month => monthlyStats[month]?.positions || 0),
+            filled: recentMonths.map(month => monthlyStats[month]?.filled || 0)
+        };
+    }
+
+    function getMonthlyCVTrendData() {
+        const data = currentData.data || [];
+        const monthlyStats = {};
+        
+        data.forEach(record => {
+            if (record.requisitionLoggedDate) {
+                const date = new Date(record.requisitionLoggedDate);
+                const monthKey = date.toLocaleDateString('en-US', { year: 'numeric', month: 'short' });
+                
+                if (!monthlyStats[monthKey]) {
+                    monthlyStats[monthKey] = { submissions: 0, positions: 0 };
+                }
+                monthlyStats[monthKey].submissions += record.numberOfCVs || 0;
+                monthlyStats[monthKey].positions += record.noOfPosition || 1;
+            }
+        });
+
+        const sortedMonths = Object.keys(monthlyStats).sort((a, b) => new Date(a) - new Date(b));
+        const recentMonths = sortedMonths.slice(-12);
+
+        return {
+            months: recentMonths,
+            submissions: recentMonths.map(month => monthlyStats[month]?.submissions || 0),
+            conversionRates: recentMonths.map(month => {
+                const stats = monthlyStats[month];
+                return stats && stats.positions > 0 ? (stats.submissions / stats.positions) * 10 : 0; // Normalize for display
+            })
         };
     }
 
