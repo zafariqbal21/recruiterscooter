@@ -357,8 +357,8 @@ app.get('*', (req, res) => {
 // Start server
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Recruitment Analytics Dashboard running on port ${PORT}`);
-  console.log(`📊 Dashboard: http://localhost:${PORT}`);
-  console.log(`📁 Upload endpoint: http://localhost:${PORT}/api/upload`);
-  console.log(`📈 Analytics endpoint: http://localhost:${PORT}/api/analytics`);
-  console.log(`🔄 Process Excel endpoint: http://localhost:${PORT}/api/process-excel`);
+  console.log(`📊 Dashboard: http://0.0.0.0:${PORT}`);
+  console.log(`📁 Upload endpoint: http://0.0.0.0:${PORT}/api/upload`);
+  console.log(`📈 Analytics endpoint: http://0.0.0.0:${PORT}/api/analytics`);
+  console.log(`🔄 Process Excel endpoint: http://0.0.0.0:${PORT}/api/process-excel`);
 });
