@@ -26,7 +26,7 @@ const upload = multer({
   }
 });
 
-// Parse recruitment data function (adapted for serverless)
+// Parse recruitment data function
 function parseRecruitmentData(buffer) {
   try {
     const workbook = XLSX.read(buffer, { type: 'buffer' });
@@ -45,17 +45,20 @@ function parseRecruitmentData(buffer) {
     // Header mapping logic
     const headerMapping = {};
     const expectedHeaders = {
-      'positionOnHoldDate': ['position on hold date', 'on hold date', 'hold date', 'position on hold', 'onhold date', 'on-hold date'],
-      'noOfPosition': ['no of position', 'number of positions', 'positions count', 'position count'],
-      'requisitionLoggedDate': ['requisition logged date', 'logged date', 'req date', 'start date'],
-      'numberOfCVs': ['number of cvs', 'cvs', 'cv count', 'resumes', 'number of cv'],
-      'positionName': ['position name', 'position', 'job title', 'role'],
-      'recruiter': ['recruiter', 'recruiter name'],
-      'bdm': ['bdm', 'business development manager'],
-      'clientName': ['client name', 'client', 'company name'],
-      'days': ['days', 'duration', 'days taken'],
-      'remarks': ['remarks', 'comments', 'notes'],
-      'cvsSharedDate': ['cvs shared date', 'cv shared date', 'shared date', 'cvs date']
+      'positionOnHoldDate': ['position on hold date', 'on hold date', 'hold date', 'position on hold', 'onhold date', 'on-hold date', 'position hold date', 'hold_date', 'on hold', 'position_on_hold_date', 'positiononholddate'],
+      'noOfPosition': ['no of position', 'number of positions', 'positions count', 'position count', 'no of positions', 'noofposition'],
+      'requisitionLoggedDate': ['requisition logged date', 'logged date', 'req date', 'start date', 'requisition date', 'requisitionloggeddate', 'requisition_logged_date', 'requisitiondate'],
+      'numberOfCVs': ['number of cvs', 'cvs', 'cv count', 'resumes', 'number of cv', 'cv_count', 'numberofcvs', 'number_of_cvs'],
+      'positionName': ['position name', 'position', 'job title', 'role', 'position_name', 'positionname'],
+      'recruiter': ['recruiter', 'recruiter name', 'recruiter_name', 'recruitername'],
+      'bdm': ['bdm', 'business development manager', 'business_development_manager', 'businessdevelopmentmanager'],
+      'clientName': ['client name', 'client', 'company name', 'client_name', 'company', 'clientname'],
+      'days': ['days', 'duration', 'days taken', 'total_days', 'totaldays'],
+      'remarks': ['remarks', 'comments', 'notes', 'remark'],
+      'cvsSharedDate': ['cvs shared date', 'cv shared date', 'shared date', 'cvs date', 'cv date', 'cv_shared_date', 'cvs_shared_date', 'cvsshareddate', 'first cv shared', 'last cv shared'],
+      'firstCVShared': ['first cv shared', 'first cv', 'first_cv_shared', 'firstcvshared'],
+      'lastCVShared': ['last cv shared', 'last cv', 'last_cv_shared', 'lastcvshared'],
+      'cvsSharedCount': ['cvs shared count', 'cv shared count', 'shared count', 'cvs_shared_count', 'cvssharedcount']
     };
     
     rawHeaders.forEach((header, index) => {
@@ -77,7 +80,7 @@ function parseRecruitmentData(buffer) {
       }
     });
     
-    // Helper function to safely get cell value
+    // Helper functions
     function getCellValue(value, type = 'string') {
       if (value === undefined || value === null || value === '' || value === 'null' || 
           (typeof value === 'string' && value.trim() === '')) {
@@ -93,12 +96,114 @@ function parseRecruitmentData(buffer) {
       }
     }
     
-    // Parse data rows
-    const parsedData = dataRows.map((row, index) => {
-      const positionCount = getCellValue(row[headerMapping.noOfPosition], 'number') || 1;
-      const cvCount = getCellValue(row[headerMapping.numberOfCVs], 'number') || 0;
+    function parseCVsSharedDates(cellValue) {
+      if (!cellValue) return { dates: [], firstDate: null, lastDate: null, count: 0 };
+      
+      const dateStr = String(cellValue).trim();
+      if (dateStr.toLowerCase() === 'na' || dateStr === '') {
+        return { dates: [], firstDate: null, lastDate: null, count: 0 };
+      }
+      
+      const datePatterns = [
+        /(\d{1,2}-[A-Za-z]{3}-\d{2,4})/g,
+        /(\d{4}-\d{2}-\d{2})/g,
+        /(\d{1,2}\/\d{1,2}\/\d{4})/g,
+        /(\d{1,2}\.\d{1,2}\.\d{2,4})/g
+      ];
+      
+      const extractedDates = [];
+      const validDates = [];
+      
+      for (const pattern of datePatterns) {
+        const matches = dateStr.match(pattern);
+        if (matches) {
+          extractedDates.push(...matches);
+        }
+      }
+      
+      for (const dateStr of extractedDates) {
+        let parsedDate = null;
+        
+        if (dateStr.match(/\d{1,2}-[A-Za-z]{3}-\d{2,4}/)) {
+          const parts = dateStr.split('-');
+          if (parts.length === 3) {
+            const day = parseInt(parts[0]);
+            const monthName = parts[1];
+            let year = parseInt(parts[2]);
+            
+            if (year < 100) {
+              year += year < 50 ? 2000 : 1900;
+            }
+            
+            const monthMap = {
+              'jan': 0, 'feb': 1, 'mar': 2, 'apr': 3, 'may': 4, 'jun': 5,
+              'jul': 6, 'aug': 7, 'sep': 8, 'oct': 9, 'nov': 10, 'dec': 11
+            };
+            
+            const month = monthMap[monthName.toLowerCase()];
+            if (month !== undefined) {
+              parsedDate = new Date(year, month, day);
+            }
+          }
+        } else {
+          parsedDate = new Date(dateStr);
+        }
+        
+        if (parsedDate && !isNaN(parsedDate.getTime()) && parsedDate.getFullYear() > 1900) {
+          validDates.push(parsedDate);
+        }
+      }
+      
+      const uniqueDates = [...new Set(validDates.map(d => d.getTime()))]
+        .map(time => new Date(time))
+        .sort((a, b) => a - b);
       
       return {
+        dates: uniqueDates.map(d => d.toISOString().split('T')[0]),
+        firstDate: uniqueDates.length > 0 ? uniqueDates[0].toISOString().split('T')[0] : null,
+        lastDate: uniqueDates.length > 0 ? uniqueDates[uniqueDates.length - 1].toISOString().split('T')[0] : null,
+        count: uniqueDates.length
+      };
+    }
+    
+    // Parse data rows
+    const parsedData = dataRows.map((row, index) => {
+      let cvsSharedInfo = { dates: [], firstDate: null, lastDate: null, count: 0 };
+      
+      const cvsDateColumns = [
+        headerMapping.cvsSharedDate,
+        headerMapping.firstCVShared,
+        headerMapping.lastCVShared
+      ].filter(col => col !== undefined);
+      
+      if (cvsDateColumns.length > 0) {
+        const allDates = [];
+        cvsDateColumns.forEach(colIndex => {
+          const dateInfo = parseCVsSharedDates(row[colIndex]);
+          allDates.push(...dateInfo.dates);
+        });
+        
+        if (allDates.length > 0) {
+          const uniqueDates = [...new Set(allDates)].sort();
+          cvsSharedInfo = {
+            dates: uniqueDates,
+            firstDate: uniqueDates[0],
+            lastDate: uniqueDates[uniqueDates.length - 1],
+            count: uniqueDates.length
+          };
+        }
+      }
+      
+      const positionCount = getCellValue(row[headerMapping.noOfPosition], 'number') || 1;
+      let cvCount = 0;
+      if (headerMapping.numberOfCVs !== undefined) {
+        cvCount = getCellValue(row[headerMapping.numberOfCVs], 'number') || 0;
+      }
+      if (cvCount === 0 && headerMapping.cvsSharedCount !== undefined) {
+        cvCount = getCellValue(row[headerMapping.cvsSharedCount], 'number') || 0;
+      }
+      
+      const record = {
         rowNumber: index + 2,
         recruiter: getCellValue(row[headerMapping.recruiter]),
         bdm: getCellValue(row[headerMapping.bdm]),
@@ -109,8 +214,14 @@ function parseRecruitmentData(buffer) {
         numberOfCVs: cvCount,
         positionOnHoldDate: getCellValue(row[headerMapping.positionOnHoldDate]),
         days: getCellValue(row[headerMapping.days], 'number'),
-        remarks: getCellValue(row[headerMapping.remarks])
+        remarks: getCellValue(row[headerMapping.remarks]),
+        cvsSharedDates: cvsSharedInfo.dates,
+        firstCVSharedDate: cvsSharedInfo.firstDate,
+        lastCVSharedDate: cvsSharedInfo.lastDate,
+        cvsSharedCount: cvsSharedInfo.count
       };
+      
+      return record;
     }).filter(record => 
       record.recruiter || record.clientName || record.positionName || 
       record.numberOfCVs > 0 || record.noOfPosition > 0
@@ -133,7 +244,7 @@ function parseRecruitmentData(buffer) {
 }
 
 // Routes
-app.get('/', (req, res) => {
+app.get('/api', (req, res) => {
   res.json({
     message: 'Recruitment Analytics Dashboard API',
     version: '1.0.0',
@@ -145,11 +256,11 @@ app.get('/', (req, res) => {
   });
 });
 
-app.get('/health', (req, res) => {
+app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() });
 });
 
-app.post('/upload', upload.single('recruitmentData'), (req, res) => {
+app.post('/api/upload', upload.single('recruitmentData'), (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ error: 'No file uploaded' });
@@ -176,7 +287,7 @@ app.post('/upload', upload.single('recruitmentData'), (req, res) => {
   }
 });
 
-app.post('/process-excel', upload.single('recruitmentData'), (req, res) => {
+app.post('/api/process-excel', upload.single('recruitmentData'), (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ error: 'No Excel file provided' });
@@ -218,4 +329,5 @@ app.use((error, req, res, next) => {
   res.status(500).json({ error: error.message || 'Internal server error' });
 });
 
+// Export the Express app as a Vercel function
 module.exports = app;
