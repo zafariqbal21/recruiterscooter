@@ -78,8 +78,8 @@ function parseRecruitmentData(filePath) {
     // Order matters - more specific matches should come first
     const headerMapping = {};
     const expectedHeaders = {
-      'positionOnHoldDate': ['position on hold date', 'on hold date', 'hold date', 'position on hold', 'onhold date', 'on-hold date'],
-      'noOfPosition': ['no of position', 'number of positions', 'positions count'],
+      'positionOnHoldDate': ['position on hold date', 'on hold date', 'hold date', 'position on hold', 'onhold date', 'on-hold date', 'position hold date', 'hold_date'],
+      'noOfPosition': ['no of position', 'number of positions', 'positions count', 'position count'],
       'requisitionLoggedDate': ['requisition logged date', 'logged date', 'req date', 'start date'],
       'numberOfCVs': ['number of cvs', 'cvs', 'cv count', 'resumes'],
       'positionName': ['position name', 'position', 'job title', 'role'],
@@ -222,7 +222,15 @@ function parseRecruitmentData(filePath) {
     
     // Helper function to safely get cell value
     function getCellValue(value, type = 'string') {
-      if (value === undefined || value === null || value === '') {
+      // Check for various empty/null values
+      if (value === undefined || 
+          value === null || 
+          value === '' || 
+          value === 'null' || 
+          value === 'NULL' ||
+          (typeof value === 'string' && value.trim() === '') ||
+          (typeof value === 'string' && value.trim().toLowerCase() === 'na') ||
+          (typeof value === 'string' && value.trim().toLowerCase() === 'n/a')) {
         return null;
       }
       
@@ -231,9 +239,15 @@ function parseRecruitmentData(filePath) {
           const num = Number(value);
           return isNaN(num) ? null : num;
         case 'date':
-          return convertExcelDate(value);
+          const dateResult = convertExcelDate(value);
+          // Additional validation for date
+          if (dateResult && dateResult !== 'null' && dateResult !== '') {
+            return dateResult;
+          }
+          return null;
         default:
-          return String(value).trim();
+          const strValue = String(value).trim();
+          return strValue === '' || strValue === 'null' || strValue === 'NULL' ? null : strValue;
       }
     }
     

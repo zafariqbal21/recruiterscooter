@@ -1310,9 +1310,13 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Debug logging
         console.log('Position Status Analysis - Total records:', data.length);
-        
-        // Check various possible field names for position on hold date
-        const possibleOnHoldFields = ['positionOnHoldDate', 'Position On Hold Date', 'onHoldDate', 'hold_date'];
+        console.log('Sample records with position on hold dates:', data.slice(0, 5).map(r => ({
+            client: r.clientName,
+            positionOnHoldDate: r.positionOnHoldDate,
+            'Position On Hold Date': r['Position On Hold Date'],
+            onHoldDate: r.onHoldDate,
+            positions: r.noOfPosition
+        })));
         
         let active = 0;
         let onHold = 0;
@@ -1320,32 +1324,35 @@ document.addEventListener('DOMContentLoaded', function() {
         data.forEach((record, index) => {
             const positions = parseInt(record.noOfPosition) || parseInt(record['No Of Position']) || 1;
             
-            // Check if position is on hold using multiple possible field names
-            let isOnHold = false;
-            for (const field of possibleOnHoldFields) {
-                const holdValue = record[field];
-                if (holdValue && holdValue !== '' && holdValue !== null && holdValue !== 'null' && 
-                    holdValue !== undefined && String(holdValue).trim() !== '') {
-                    isOnHold = true;
-                    break;
-                }
-            }
+            // Check all possible field names for position on hold date
+            const holdDate = record.positionOnHoldDate || 
+                            record['Position On Hold Date'] || 
+                            record.onHoldDate || 
+                            record['position_on_hold_date'] ||
+                            record['Hold Date'] ||
+                            record.holdDate;
+            
+            // More comprehensive check for empty/null values
+            const isOnHold = holdDate && 
+                            holdDate !== '' && 
+                            holdDate !== null && 
+                            holdDate !== 'null' && 
+                            holdDate !== 'NULL' &&
+                            holdDate !== undefined && 
+                            String(holdDate).trim() !== '' &&
+                            String(holdDate).trim().toLowerCase() !== 'na' &&
+                            String(holdDate).trim().toLowerCase() !== 'n/a';
             
             if (isOnHold) {
                 onHold += positions;
-                if (index < 3) console.log(`On Hold: ${record.clientName} - ${positions} positions`);
+                if (index < 5) console.log(`On Hold: ${record.clientName || 'Unknown'} - ${positions} positions - Hold Date: ${holdDate}`);
             } else {
                 active += positions;
-                if (index < 3) console.log(`Active: ${record.clientName} - ${positions} positions`);
+                if (index < 5) console.log(`Active: ${record.clientName || 'Unknown'} - ${positions} positions`);
             }
         });
 
         console.log('Position Status Results - Active:', active, 'On Hold:', onHold, 'Total:', active + onHold);
-
-        // Ensure we have some data to display
-        if (active === 0 && onHold === 0) {
-            active = data.length; // Fallback to record count if no position counts found
-        }
 
         return {
             labels: ['Active', 'On Hold'],
