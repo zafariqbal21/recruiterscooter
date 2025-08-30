@@ -322,21 +322,35 @@ app.get('/api/analytics', (req, res) => {
   });
 });
 
+// Ensure all API responses are JSON
+app.use('/api', (req, res, next) => {
+  res.setHeader('Content-Type', 'application/json');
+  next();
+});
+
 // Error handling middleware
 app.use((error, req, res, next) => {
-  if (error instanceof multer.MulterError) {
-    return res.status(400).json({ error: error.message });
+  console.error('Server error:', error);
+  
+  // Ensure JSON response for API routes
+  if (req.path.startsWith('/api/')) {
+    if (error instanceof multer.MulterError) {
+      return res.status(400).json({ error: error.message });
+    }
+    return res.status(500).json({ error: error.message || 'Internal server error' });
   }
-  res.status(500).json({ error: error.message || 'Internal server error' });
+  
+  // For non-API routes, serve error page or redirect
+  res.status(500).sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+// API 404 handler - must come before catch-all
+app.use('/api/*', (req, res) => {
+  res.status(404).json({ error: 'API endpoint not found' });
 });
 
 // Handle client-side routing - serve index.html for non-API routes
 app.get('*', (req, res) => {
-  // If it's an API route, return 404 JSON
-  if (req.path.startsWith('/api/')) {
-    return res.status(404).json({ error: 'API route not found' });
-  }
-  // Otherwise serve the main HTML file
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 

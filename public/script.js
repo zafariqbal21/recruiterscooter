@@ -73,6 +73,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 body: formData
             });
 
+            // Check if response is actually JSON
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                throw new Error('Server returned non-JSON response. Please check server status.');
+            }
+
             const result = await response.json();
 
             if (response.ok) {
@@ -82,10 +88,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 populateDataTable(result.data);
                 renderChartsForTab('overview');
             } else {
-                displayError(result.error);
+                displayError(result.error || 'Upload failed with unknown error');
             }
         } catch (error) {
-            displayError('Upload failed: ' + error.message);
+            console.error('Upload error:', error);
+            if (error.name === 'SyntaxError') {
+                displayError('Server returned invalid response. Please try again or check server logs.');
+            } else {
+                displayError('Upload failed: ' + error.message);
+            }
         } finally {
             showLoadingSpinner(false);
         }
