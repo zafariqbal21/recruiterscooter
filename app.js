@@ -4,9 +4,15 @@ const cors = require('cors');
 const multer = require('multer');
 const XLSX = require('xlsx');
 const path = require('path');
+const fs = require('fs');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+
+// Ensure uploads directory exists
+if (!fs.existsSync('uploads')) {
+  fs.mkdirSync('uploads');
+}
 
 // Middleware
 app.use(cors());
@@ -65,11 +71,50 @@ app.post('/api/upload', upload.single('recruitmentData'), (req, res) => {
       filename: req.file.originalname,
       savedAs: req.file.filename,
       rowCount: data.length,
-      preview: data.slice(0, 5) // First 5 rows as preview
+      data: data,
+      preview: data.slice(0, 5)
     });
   } catch (error) {
     console.error('Error processing file:', error);
     res.status(500).json({ error: 'Failed to process uploaded file' });
+  }
+});
+
+// Process Excel data endpoint
+app.post('/api/process-excel', upload.single('excelFile'), (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No Excel file provided' });
+    }
+
+    const workbook = XLSX.readFile(req.file.path);
+    const sheetName = workbook.SheetNames[0];
+    const worksheet = workbook.Sheets[sheetName];
+    const jsonData = XLSX.utils.sheet_to_json(worksheet);
+
+    // Process the data - example analytics
+    const analytics = {
+      totalRows: jsonData.length,
+      columns: Object.keys(jsonData[0] || {}),
+      summary: {
+        firstRecord: jsonData[0] || null,
+        lastRecord: jsonData[jsonData.length - 1] || null
+      },
+      processedAt: new Date().toISOString()
+    };
+
+    res.json({
+      success: true,
+      analytics: analytics,
+      data: jsonData
+    });
+
+    // Clean up uploaded file
+    fs.unlinkSync(req.file.path);
+
+  } catch (error) {
+    console.error('Error processing Excel file:', error);
+    res.status(500).json({ error: 'Failed to process Excel file' });
   }
 });
 
@@ -106,4 +151,5 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log(`📊 Dashboard: http://localhost:${PORT}`);
   console.log(`📁 Upload endpoint: http://localhost:${PORT}/api/upload`);
   console.log(`📈 Analytics endpoint: http://localhost:${PORT}/api/analytics`);
+  console.log(`🔄 Process Excel endpoint: http://localhost:${PORT}/api/process-excel`);
 });
