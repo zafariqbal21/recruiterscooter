@@ -58,23 +58,38 @@ function parseRecruitmentData(filePath) {
       throw new Error('Excel file is empty');
     }
     
-    // Get headers from first row
-    const headers = rawData[0];
+    // Get headers from first row and normalize them
+    const rawHeaders = rawData[0];
     const dataRows = rawData.slice(1);
     
-    // Expected headers mapping
-    const expectedHeaders = [
-      'Recruiter',
-      'BDM', 
-      'Client Name',
-      'Position Name',
-      'No Of Position',
-      'Requisition Logged Date',
-      'Number Of CVs',
-      'Position On Hold Date',
-      'Days',
-      'Remarks'
-    ];
+    // Create a mapping from normalized header names to column indices
+    const headerMapping = {};
+    const expectedHeaders = {
+      'recruiter': ['recruiter', 'recruiter name'],
+      'bdm': ['bdm', 'business development manager'],
+      'clientName': ['client name', 'client', 'company name'],
+      'positionName': ['position name', 'position', 'job title', 'role'],
+      'noOfPosition': ['no of position', 'number of positions', 'positions count'],
+      'requisitionLoggedDate': ['requisition logged date', 'logged date', 'req date', 'start date'],
+      'numberOfCVs': ['number of cvs', 'cvs', 'cv count', 'resumes'],
+      'positionOnHoldDate': ['position on hold date', 'on hold date', 'hold date'],
+      'days': ['days', 'duration', 'days taken'],
+      'remarks': ['remarks', 'comments', 'notes']
+    };
+    
+    // Find column indices by matching header names (case-insensitive)
+    rawHeaders.forEach((header, index) => {
+      if (!header) return;
+      
+      const normalizedHeader = String(header).toLowerCase().trim();
+      
+      for (const [fieldName, possibleNames] of Object.entries(expectedHeaders)) {
+        if (possibleNames.some(name => normalizedHeader.includes(name) || name.includes(normalizedHeader))) {
+          headerMapping[fieldName] = index;
+          break;
+        }
+      }
+    });
     
     // Helper function to convert Excel date serial to JS Date
     function convertExcelDate(excelDate) {
@@ -114,20 +129,20 @@ function parseRecruitmentData(filePath) {
       }
     }
     
-    // Parse data rows
+    // Parse data rows using dynamic header mapping
     const parsedData = dataRows.map((row, index) => {
       const record = {
         rowNumber: index + 2, // +2 because we skip header and arrays are 0-indexed
-        recruiter: getCellValue(row[0]),
-        bdm: getCellValue(row[1]),
-        clientName: getCellValue(row[2]),
-        positionName: getCellValue(row[3]),
-        noOfPosition: getCellValue(row[4], 'number'),
-        requisitionLoggedDate: getCellValue(row[5], 'date'),
-        numberOfCVs: getCellValue(row[6], 'number'),
-        positionOnHoldDate: getCellValue(row[7], 'date'),
-        days: getCellValue(row[8], 'number'),
-        remarks: getCellValue(row[9])
+        recruiter: getCellValue(row[headerMapping.recruiter]),
+        bdm: getCellValue(row[headerMapping.bdm]),
+        clientName: getCellValue(row[headerMapping.clientName]),
+        positionName: getCellValue(row[headerMapping.positionName]),
+        noOfPosition: getCellValue(row[headerMapping.noOfPosition], 'number'),
+        requisitionLoggedDate: getCellValue(row[headerMapping.requisitionLoggedDate], 'date'),
+        numberOfCVs: getCellValue(row[headerMapping.numberOfCVs], 'number'),
+        positionOnHoldDate: getCellValue(row[headerMapping.positionOnHoldDate], 'date'),
+        days: getCellValue(row[headerMapping.days], 'number'),
+        remarks: getCellValue(row[headerMapping.remarks])
       };
       
       return record;
@@ -162,7 +177,8 @@ function parseRecruitmentData(filePath) {
       success: true,
       data: parsedData,
       summary: summary,
-      headers: expectedHeaders,
+      headers: rawHeaders,
+      headerMapping: headerMapping,
       processedAt: new Date().toISOString()
     };
     
