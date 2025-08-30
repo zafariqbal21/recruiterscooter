@@ -913,8 +913,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     fill: false,
                     tension: 0.4
                 }, {
-                    label: 'CVs Shared',
-                    data: comparisonData.cvsShared,
+                    label: 'CVs Submitted',
+                    data: comparisonData.cvsSubmitted,
                     borderColor: '#48bb78',
                     backgroundColor: 'rgba(72, 187, 120, 0.1)',
                     borderWidth: 3,
@@ -951,7 +951,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 plugins: {
                     title: {
                         display: true,
-                        text: 'Requisition vs CV Sharing Timeline',
+                        text: 'Requisition vs CV Submission Timeline',
                         color: '#e2e8f0',
                         font: { size: 16, weight: 'bold' }
                     },
@@ -1021,38 +1021,26 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
 
-        // Monthly Position Logging Trend (moved to second chart)
+        // Monthly CV Submission Trends
         const monthlyData = getMonthlyTrendData();
         renderChart('monthlyCVChart', {
-            type: 'line',
+            type: 'bar',
             data: {
                 labels: monthlyData.months,
                 datasets: [{
+                    label: 'CVs Submitted',
+                    data: monthlyData.cvsSubmitted,
+                    backgroundColor: '#48bb78',
+                    borderColor: '#2f855a',
+                    borderWidth: 1,
+                    borderRadius: 4
+                }, {
                     label: 'Positions Logged',
                     data: monthlyData.positions,
-                    borderColor: '#4299e1',
-                    backgroundColor: 'rgba(66, 153, 225, 0.1)',
-                    borderWidth: 3,
-                    pointBackgroundColor: '#4299e1',
-                    pointBorderColor: '#ffffff',
-                    pointBorderWidth: 2,
-                    pointRadius: 6,
-                    pointHoverRadius: 8,
-                    fill: true,
-                    tension: 0.4
-                }, {
-                    label: 'Positions Filled',
-                    data: monthlyData.filled,
-                    borderColor: '#48bb78',
-                    backgroundColor: 'rgba(72, 187, 120, 0.1)',
-                    borderWidth: 3,
-                    pointBackgroundColor: '#48bb78',
-                    pointBorderColor: '#ffffff',
-                    pointBorderWidth: 2,
-                    pointRadius: 6,
-                    pointHoverRadius: 8,
-                    fill: false,
-                    tension: 0.4
+                    backgroundColor: '#4299e1',
+                    borderColor: '#2b6cb0',
+                    borderWidth: 1,
+                    borderRadius: 4
                 }]
             },
             options: {
@@ -1065,7 +1053,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 plugins: {
                     title: {
                         display: true,
-                        text: 'Monthly Position Logging Trends',
+                        text: 'Monthly CV Submission & Position Trends',
                         color: '#e2e8f0',
                         font: { size: 16, weight: 'bold' }
                     },
@@ -1084,9 +1072,9 @@ document.addEventListener('DOMContentLoaded', function() {
                             },
                             afterLabel: function(context) {
                                 if (context.datasetIndex === 0) {
-                                    const filled = monthlyData.filled[context.dataIndex];
-                                    const fillRate = context.parsed.y > 0 ? ((filled / context.parsed.y) * 100).toFixed(1) : 0;
-                                    return `Fill Rate: ${fillRate}%`;
+                                    const positions = monthlyData.positions[context.dataIndex];
+                                    const ratio = positions > 0 ? (context.parsed.y / positions).toFixed(1) : 0;
+                                    return `CV-to-Position Ratio: ${ratio}:1`;
                                 }
                                 return '';
                             }
@@ -1110,62 +1098,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 animation: {
                     duration: 1500,
                     easing: 'easeOutCubic'
-                }
-            }
-        });
-
-        // Client Response Time Chart (moved from client tab to properly render)
-        const responseData = getClientResponseTimeData();
-        renderChart('clientDaysChart', {
-            type: 'line',
-            data: {
-                labels: responseData.labels,
-                datasets: [{
-                    label: 'Average Response Time (Days)',
-                    data: responseData.values,
-                    borderColor: '#f56565',
-                    backgroundColor: 'rgba(245, 101, 101, 0.1)',
-                    borderWidth: 3,
-                    pointBackgroundColor: '#f56565',
-                    pointBorderColor: '#ffffff',
-                    pointBorderWidth: 2,
-                    pointRadius: 6,
-                    pointHoverRadius: 8,
-                    fill: true,
-                    tension: 0.4
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    title: {
-                        display: true,
-                        text: 'Client Response Time Trends',
-                        color: '#e2e8f0',
-                        font: { size: 16, weight: 'bold' }
-                    },
-                    legend: {
-                        labels: { color: '#e2e8f0' }
-                    },
-                    tooltip: {
-                        backgroundColor: 'rgba(45, 55, 72, 0.95)',
-                        titleColor: '#e2e8f0',
-                        bodyColor: '#e2e8f0',
-                        borderColor: '#4a5568',
-                        borderWidth: 1
-                    }
-                },
-                scales: {
-                    x: {
-                        ticks: { color: '#e2e8f0' },
-                        grid: { color: 'rgba(74, 85, 104, 0.3)' }
-                    },
-                    y: {
-                        beginAtZero: true,
-                        ticks: { color: '#e2e8f0' },
-                        grid: { color: 'rgba(74, 85, 104, 0.3)' }
-                    }
                 }
             }
         });
@@ -1212,12 +1144,29 @@ document.addEventListener('DOMContentLoaded', function() {
                         titleColor: '#e2e8f0',
                         bodyColor: '#e2e8f0',
                         borderColor: '#4a5568',
-                        borderWidth: 1
+                        borderWidth: 1,
+                        callbacks: {
+                            label: function(context) {
+                                return `${context.dataset.label}: ${context.parsed.y}`;
+                            },
+                            afterLabel: function(context) {
+                                if (context.datasetIndex === 0) {
+                                    const positions = activityData.positions[context.dataIndex];
+                                    const ratio = positions > 0 ? (context.parsed.y / positions).toFixed(1) : 0;
+                                    return `CV-to-Position Ratio: ${ratio}:1`;
+                                }
+                                return '';
+                            }
+                        }
                     }
                 },
                 scales: {
                     x: {
-                        ticks: { color: '#e2e8f0' },
+                        ticks: { 
+                            color: '#e2e8f0',
+                            maxRotation: 45,
+                            minRotation: 0
+                        },
                         grid: { color: 'rgba(74, 85, 104, 0.3)' }
                     },
                     y: {
@@ -1229,9 +1178,9 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
 
-        // Monthly CV Submissions with Efficiency
-        const cvTrendData = getMonthlyCVTrendData();
-        renderChart('monthlyCVChart', {
+        // Client Response Time Line Chart
+        const responseData = getClientResponseTimeData();
+        renderChart('clientDaysChart', {
             type: 'bar',
             data: {
                 labels: cvTrendData.months,
@@ -1564,28 +1513,26 @@ document.addEventListener('DOMContentLoaded', function() {
         data.forEach(record => {
             if (record.requisitionLoggedDate) {
                 const date = new Date(record.requisitionLoggedDate);
-                const monthKey = date.toLocaleDateString('en-US', { year: 'numeric', month: 'short' });
+                if (!isNaN(date.getTime())) {
+                    const monthKey = date.toLocaleDateString('en-US', { year: 'numeric', month: 'short' });
 
-                if (!monthlyStats[monthKey]) {
-                    monthlyStats[monthKey] = { positions: 0, filled: 0 };
-                }
-                monthlyStats[monthKey].positions += record.noOfPosition || 1;
-
-                // Estimate filled positions (positions without hold date and reasonable days)
-                if (!record.positionOnHoldDate && record.days && record.days < 60) {
-                    monthlyStats[monthKey].filled += Math.round((record.noOfPosition || 1) * 0.7);
+                    if (!monthlyStats[monthKey]) {
+                        monthlyStats[monthKey] = { positions: 0, cvsSubmitted: 0 };
+                    }
+                    monthlyStats[monthKey].positions += record.noOfPosition || 1;
+                    monthlyStats[monthKey].cvsSubmitted += record.numberOfCVs || 0;
                 }
             }
         });
 
         // Get last 12 months or available data
-        const sortedMonths = Object.keys(monthlyStats).sort((a, b) => new Date(a) - new Date(b));
+        const sortedMonths = Object.keys(monthlyStats).sort((a, b) => new Date(a + ' 1, 2000') - new Date(b + ' 1, 2000'));
         const recentMonths = sortedMonths.slice(-12);
 
         return {
-            months: recentMonths,
+            months: recentMonths.length > 0 ? recentMonths : ['No Data'],
             positions: recentMonths.map(month => monthlyStats[month]?.positions || 0),
-            filled: recentMonths.map(month => monthlyStats[month]?.filled || 0)
+            cvsSubmitted: recentMonths.map(month => monthlyStats[month]?.cvsSubmitted || 0)
         };
     }
 
@@ -1627,58 +1574,37 @@ document.addEventListener('DOMContentLoaded', function() {
             // Process by requisition date
             if (record.requisitionLoggedDate) {
                 const reqDate = new Date(record.requisitionLoggedDate);
-                const monthKey = reqDate.toLocaleDateString('en-US', { year: 'numeric', month: 'short' });
-
-                if (!monthlyStats[monthKey]) {
-                    monthlyStats[monthKey] = { 
-                        positions: 0, 
-                        cvsShared: 0, 
-                        daysToCV: [], 
-                        totalDaysToCV: 0, 
-                        recordsWithCV: 0 
-                    };
-                }
-                monthlyStats[monthKey].positions += record.noOfPosition || 1;
-            }
-
-            // Process CV shared dates
-            if (record.cvsSharedDates && record.cvsSharedDates.length > 0) {
-                record.cvsSharedDates.forEach(cvDate => {
-                    const date = new Date(cvDate);
-                    const monthKey = date.toLocaleDateString('en-US', { year: 'numeric', month: 'short' });
+                if (!isNaN(reqDate.getTime())) {
+                    const monthKey = reqDate.toLocaleDateString('en-US', { year: 'numeric', month: 'short' });
 
                     if (!monthlyStats[monthKey]) {
                         monthlyStats[monthKey] = { 
                             positions: 0, 
-                            cvsShared: 0, 
-                            daysToCV: [], 
+                            cvsSubmitted: 0, 
                             totalDaysToCV: 0, 
                             recordsWithCV: 0 
                         };
                     }
-                    monthlyStats[monthKey].cvsShared += 1;
-                });
-            }
+                    monthlyStats[monthKey].positions += record.noOfPosition || 1;
+                    monthlyStats[monthKey].cvsSubmitted += record.numberOfCVs || 0;
 
-            // Process days to first CV
-            if (record.daysToFirstCV !== null && record.requisitionLoggedDate) {
-                const reqDate = new Date(record.requisitionLoggedDate);
-                const monthKey = reqDate.toLocaleDateString('en-US', { year: 'numeric', month: 'short' });
-
-                if (monthlyStats[monthKey]) {
-                    monthlyStats[monthKey].totalDaysToCV += record.daysToFirstCV;
-                    monthlyStats[monthKey].recordsWithCV += 1;
+                    // Process days to first CV
+                    if (record.daysToFirstCV !== null && record.daysToFirstCV !== undefined) {
+                        monthlyStats[monthKey].totalDaysToCV += record.daysToFirstCV;
+                        monthlyStats[monthKey].recordsWithCV += 1;
+                    }
                 }
             }
         });
 
-        const sortedMonths = Object.keys(monthlyStats).sort((a, b) => new Date(a) - new Date(b));
+        // Fill in missing months for continuity
+        const sortedMonths = Object.keys(monthlyStats).sort((a, b) => new Date(a + ' 1, 2000') - new Date(b + ' 1, 2000'));
         const recentMonths = sortedMonths.slice(-12);
 
         return {
-            months: recentMonths,
+            months: recentMonths.length > 0 ? recentMonths : ['No Data'],
             positions: recentMonths.map(month => monthlyStats[month]?.positions || 0),
-            cvsShared: recentMonths.map(month => monthlyStats[month]?.cvsShared || 0),
+            cvsSubmitted: recentMonths.map(month => monthlyStats[month]?.cvsSubmitted || 0),
             avgDaysToCV: recentMonths.map(month => {
                 const stats = monthlyStats[month];
                 return stats && stats.recordsWithCV > 0 
