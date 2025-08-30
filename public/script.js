@@ -169,24 +169,48 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        tableBody.innerHTML = data.map(record => `
-            <tr>
-                <td>${record.recruiter || '-'}</td>
-                <td>${record.bdm || '-'}</td>
-                <td>${record.clientName || '-'}</td>
-                <td>${record.positionName || '-'}</td>
-                <td>${record.noOfPosition || 0}</td>
-                <td>${record.requisitionLoggedDate || '-'}</td>
-                <td>${record.numberOfCVs || 0}</td>
-                <td>${record.firstCVSharedDate || '-'}</td>
-                <td>${record.lastCVSharedDate || '-'}</td>
-                <td>${record.cvsSharedCount || 0}</td>
-                <td>${record.daysToFirstCV !== null && record.daysToFirstCV !== undefined ? record.daysToFirstCV : '-'}</td>
-                <td>${record.positionOnHoldDate || '-'}</td>
-                <td>${record.days || '-'}</td>
-                <td>${record.remarks || '-'}</td>
-            </tr>
-        `).join('');
+        console.log('Populating table with', data.length, 'records');
+        console.log('Sample record for table:', data[0]);
+
+        tableBody.innerHTML = data.map((record, index) => {
+            // Handle different possible field names and ensure we show actual data
+            const formatValue = (value, fallback = '-') => {
+                if (value === null || value === undefined || value === '' || value === 'null') {
+                    return fallback;
+                }
+                return value;
+            };
+
+            const formatDate = (dateValue) => {
+                if (!dateValue || dateValue === '-' || dateValue === 'null') return '-';
+                try {
+                    const date = new Date(dateValue);
+                    if (isNaN(date.getTime())) return '-';
+                    return date.toLocaleDateString();
+                } catch (e) {
+                    return dateValue.toString();
+                }
+            };
+
+            return `
+                <tr>
+                    <td>${formatValue(record.recruiter)}</td>
+                    <td>${formatValue(record.bdm)}</td>
+                    <td>${formatValue(record.clientName)}</td>
+                    <td>${formatValue(record.positionName)}</td>
+                    <td>${formatValue(record.noOfPosition, 1)}</td>
+                    <td>${formatDate(record.requisitionLoggedDate)}</td>
+                    <td>${formatValue(record.numberOfCVs, 0)}</td>
+                    <td>${formatDate(record.firstCVSharedDate)}</td>
+                    <td>${formatDate(record.lastCVSharedDate)}</td>
+                    <td>${formatValue(record.cvsSharedCount, 0)}</td>
+                    <td>${record.daysToFirstCV !== null && record.daysToFirstCV !== undefined && record.daysToFirstCV !== '' ? record.daysToFirstCV : '-'}</td>
+                    <td>${formatDate(record.positionOnHoldDate)}</td>
+                    <td>${formatValue(record.days)}</td>
+                    <td>${formatValue(record.remarks)}</td>
+                </tr>
+            `;
+        }).join('');
     }
 
     function renderChartsForTab(tabName) {

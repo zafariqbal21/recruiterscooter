@@ -78,45 +78,65 @@ function parseRecruitmentData(filePath) {
     // Order matters - more specific matches should come first
     const headerMapping = {};
     const expectedHeaders = {
-      'positionOnHoldDate': ['position on hold date', 'on hold date', 'hold date', 'position on hold', 'onhold date', 'on-hold date', 'position hold date', 'hold_date', 'on hold', 'position_on_hold_date'],
-      'noOfPosition': ['no of position', 'number of positions', 'positions count', 'position count', 'no of positions'],
-      'requisitionLoggedDate': ['requisition logged date', 'logged date', 'req date', 'start date', 'requisition date'],
-      'numberOfCVs': ['number of cvs', 'cvs', 'cv count', 'resumes', 'number of cv', 'cv_count'],
-      'positionName': ['position name', 'position', 'job title', 'role', 'position_name'],
-      'recruiter': ['recruiter', 'recruiter name', 'recruiter_name'],
-      'bdm': ['bdm', 'business development manager', 'business_development_manager'],
-      'clientName': ['client name', 'client', 'company name', 'client_name', 'company'],
-      'days': ['days', 'duration', 'days taken', 'total_days'],
+      'positionOnHoldDate': ['position on hold date', 'on hold date', 'hold date', 'position on hold', 'onhold date', 'on-hold date', 'position hold date', 'hold_date', 'on hold', 'position_on_hold_date', 'positiononholddate'],
+      'noOfPosition': ['no of position', 'number of positions', 'positions count', 'position count', 'no of positions', 'noofposition'],
+      'requisitionLoggedDate': ['requisition logged date', 'logged date', 'req date', 'start date', 'requisition date', 'requisitionloggeddate', 'requisition_logged_date', 'requisitiondate'],
+      'numberOfCVs': ['number of cvs', 'cvs', 'cv count', 'resumes', 'number of cv', 'cv_count', 'numberofcvs', 'number_of_cvs'],
+      'positionName': ['position name', 'position', 'job title', 'role', 'position_name', 'positionname'],
+      'recruiter': ['recruiter', 'recruiter name', 'recruiter_name', 'recruitername'],
+      'bdm': ['bdm', 'business development manager', 'business_development_manager', 'businessdevelopmentmanager'],
+      'clientName': ['client name', 'client', 'company name', 'client_name', 'company', 'clientname'],
+      'days': ['days', 'duration', 'days taken', 'total_days', 'totaldays'],
       'remarks': ['remarks', 'comments', 'notes', 'remark'],
-      'cvsSharedDate': ['cvs shared date', 'cv shared date', 'shared date', 'cvs date', 'cv date', 'cv_shared_date', 'cvs_shared_date']
+      'cvsSharedDate': ['cvs shared date', 'cv shared date', 'shared date', 'cvs date', 'cv date', 'cv_shared_date', 'cvs_shared_date', 'cvsshareddate', 'first cv shared', 'last cv shared'],
+      'firstCVShared': ['first cv shared', 'first cv', 'first_cv_shared', 'firstcvshared'],
+      'lastCVShared': ['last cv shared', 'last cv', 'last_cv_shared', 'lastcvshared'],
+      'cvsSharedCount': ['cvs shared count', 'cv shared count', 'shared count', 'cvs_shared_count', 'cvssharedcount']
     };
     
     // Find column indices by matching header names (case-insensitive)
     rawHeaders.forEach((header, index) => {
       if (!header) return;
       
-      const normalizedHeader = String(header).toLowerCase().trim()
+      const originalHeader = String(header).trim();
+      const normalizedHeader = originalHeader.toLowerCase()
         .replace(/[^a-z0-9\s]/g, '') // Remove special characters
-        .replace(/\s+/g, ' '); // Normalize spaces
+        .replace(/\s+/g, ' ') // Normalize spaces
+        .trim();
+      
+      console.log(`Processing header "${originalHeader}" -> "${normalizedHeader}" at index ${index}`);
       
       for (const [fieldName, possibleNames] of Object.entries(expectedHeaders)) {
         // Skip if already mapped
         if (headerMapping[fieldName] !== undefined) continue;
         
-        // Use exact matching first, then fallback to partial matching
+        // Try exact matching first
         const exactMatch = possibleNames.some(name => {
-          const normalizedName = name.replace(/[^a-z0-9\s]/g, '').replace(/\s+/g, ' ');
+          const normalizedName = name.replace(/[^a-z0-9\s]/g, '').replace(/\s+/g, ' ').trim();
           return normalizedHeader === normalizedName;
         });
         
+        // Try partial matching for longer field names
         const partialMatch = !exactMatch && possibleNames.some(name => {
-          const normalizedName = name.replace(/[^a-z0-9\s]/g, '').replace(/\s+/g, ' ');
-          return normalizedHeader.includes(normalizedName) && normalizedName.length > 3;
+          const normalizedName = name.replace(/[^a-z0-9\s]/g, '').replace(/\s+/g, ' ').trim();
+          return normalizedName.length > 3 && (
+            normalizedHeader.includes(normalizedName) || 
+            normalizedName.includes(normalizedHeader)
+          );
         });
         
-        if (exactMatch || partialMatch) {
+        // Try matching without spaces for compound words
+        const compoundMatch = !exactMatch && !partialMatch && possibleNames.some(name => {
+          const normalizedName = name.replace(/[^a-z0-9]/g, '');
+          const compoundHeader = normalizedHeader.replace(/\s+/g, '');
+          return compoundHeader === normalizedName || 
+                 (normalizedName.length > 3 && compoundHeader.includes(normalizedName));
+        });
+        
+        if (exactMatch || partialMatch || compoundMatch) {
           headerMapping[fieldName] = index;
-          console.log(`Mapped "${header}" to field "${fieldName}" at index ${index}${exactMatch ? ' (exact)' : ' (partial)'}`);
+          const matchType = exactMatch ? 'exact' : (partialMatch ? 'partial' : 'compound');
+          console.log(`✓ Mapped "${originalHeader}" to field "${fieldName}" at index ${index} (${matchType})`);
           break;
         }
       }
@@ -265,16 +285,45 @@ function parseRecruitmentData(filePath) {
     
     // Parse data rows using dynamic header mapping
     const parsedData = dataRows.map((row, index) => {
-      // Parse CVs shared dates - handle case where column might not exist
-      const cvsSharedInfo = headerMapping.cvsSharedDate !== undefined 
-        ? parseCVsSharedDates(row[headerMapping.cvsSharedDate])
-        : { dates: [], firstDate: null, lastDate: null, count: 0 };
+      // Parse CVs shared dates - handle multiple possible columns
+      let cvsSharedInfo = { dates: [], firstDate: null, lastDate: null, count: 0 };
+      
+      // Try different CV sharing date columns
+      const cvsDateColumns = [
+        headerMapping.cvsSharedDate,
+        headerMapping.firstCVShared,
+        headerMapping.lastCVShared
+      ].filter(col => col !== undefined);
+      
+      if (cvsDateColumns.length > 0) {
+        const allDates = [];
+        cvsDateColumns.forEach(colIndex => {
+          const dateInfo = parseCVsSharedDates(row[colIndex]);
+          allDates.push(...dateInfo.dates);
+        });
+        
+        if (allDates.length > 0) {
+          const uniqueDates = [...new Set(allDates)].sort();
+          cvsSharedInfo = {
+            dates: uniqueDates,
+            firstDate: uniqueDates[0],
+            lastDate: uniqueDates[uniqueDates.length - 1],
+            count: uniqueDates.length
+          };
+        }
+      }
       
       // Get position count, default to 1 if not specified
       const positionCount = getCellValue(row[headerMapping.noOfPosition], 'number') || 1;
       
-      // Get CV count
-      const cvCount = getCellValue(row[headerMapping.numberOfCVs], 'number') || 0;
+      // Get CV count - try multiple possible columns
+      let cvCount = 0;
+      if (headerMapping.numberOfCVs !== undefined) {
+        cvCount = getCellValue(row[headerMapping.numberOfCVs], 'number') || 0;
+      }
+      if (cvCount === 0 && headerMapping.cvsSharedCount !== undefined) {
+        cvCount = getCellValue(row[headerMapping.cvsSharedCount], 'number') || 0;
+      }
       
       const record = {
         rowNumber: index + 2, // +2 because we skip header and arrays are 0-indexed
@@ -312,14 +361,27 @@ function parseRecruitmentData(filePath) {
       }
       
       // Debug log for first few records
-      if (index < 3) {
-        console.log(`Record ${index + 1}:`, {
+      if (index < 5) {
+        console.log(`\n=== Record ${index + 1} Debug ===`);
+        console.log('Raw row data:', row.slice(0, 15)); // Show first 15 columns
+        console.log('Header mapping:', headerMapping);
+        console.log('Parsed record:', {
           recruiter: record.recruiter,
-          positionOnHoldDate: record.positionOnHoldDate,
+          bdm: record.bdm,
+          clientName: record.clientName,
+          positionName: record.positionName,
+          noOfPosition: record.noOfPosition,
+          requisitionLoggedDate: record.requisitionLoggedDate,
           numberOfCVs: record.numberOfCVs,
+          positionOnHoldDate: record.positionOnHoldDate,
           firstCVSharedDate: record.firstCVSharedDate,
-          daysToFirstCV: record.daysToFirstCV
+          lastCVSharedDate: record.lastCVSharedDate,
+          cvsSharedCount: record.cvsSharedCount,
+          daysToFirstCV: record.daysToFirstCV,
+          days: record.days,
+          remarks: record.remarks
         });
+        console.log('=========================\n');
       }
       
       return record;
