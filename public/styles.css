@@ -140,6 +140,60 @@ label[for="recruitmentData"].file-selected .upload-hint {
     box-shadow: 0 4px 15px rgba(66, 153, 225, 0.3);
 }
 
+/* Minimized Upload Section Styles */
+.upload-section.minimized {
+    background: var(--bg-secondary);
+    border: 1px solid var(--success);
+    border-radius: var(--border-radius);
+    padding: 15px;
+    margin-bottom: 30px;
+}
+
+.minimized-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.minimized-content {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    width: 100%;
+}
+
+.minimized-content .upload-icon {
+    font-size: 1.5rem;
+    color: var(--success);
+}
+
+.minimized-content .file-info {
+    flex: 1;
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+.expand-btn {
+    background: var(--accent-primary);
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: calc(var(--border-radius) / 2);
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 500;
+    transition: var(--transition);
+}
+
+.expand-btn:hover {
+    background: var(--accent-secondary);
+    transform: translateY(-1px);
+}
+
+.upload-section.minimized h2 {
+    display: none;
+}
+
 .btn-primary:hover {
     transform: translateY(-2px);
     box-shadow: 0 6px 20px rgba(66, 153, 225, 0.4);

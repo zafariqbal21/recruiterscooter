@@ -87,6 +87,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 updateMetrics(result.summary);
                 populateDataTable(result.data);
                 renderChartsForTab('overview');
+                
+                // Auto-minimize upload section after successful upload
+                minimizeUploadSection();
             } else {
                 displayError(result.error || 'Upload failed with unknown error');
             }
@@ -1199,6 +1202,53 @@ document.addEventListener('DOMContentLoaded', function() {
         document.body.removeChild(a);
         window.URL.revokeObjectURL(url);
     }
+
+    function minimizeUploadSection() {
+        const uploadSection = document.querySelector('.upload-section');
+        const uploadForm = document.getElementById('uploadForm');
+        
+        if (uploadSection && uploadForm) {
+            // Add minimized class for styling
+            uploadSection.classList.add('minimized');
+            
+            // Hide the form content
+            uploadForm.style.display = 'none';
+            
+            // Create or update the minimized header
+            let minimizedHeader = uploadSection.querySelector('.minimized-header');
+            if (!minimizedHeader) {
+                minimizedHeader = document.createElement('div');
+                minimizedHeader.className = 'minimized-header';
+                uploadSection.insertBefore(minimizedHeader, uploadForm);
+            }
+            
+            const fileName = currentData?.filename || 'File uploaded';
+            minimizedHeader.innerHTML = `
+                <div class="minimized-content">
+                    <span class="upload-icon">✅</span>
+                    <span class="file-info">${fileName} - Successfully processed</span>
+                    <button class="expand-btn" onclick="expandUploadSection()">📂 Change File</button>
+                </div>
+            `;
+        }
+    }
+
+    // Make expandUploadSection available globally
+    window.expandUploadSection = function() {
+        const uploadSection = document.querySelector('.upload-section');
+        const uploadForm = document.getElementById('uploadForm');
+        
+        if (uploadSection && uploadForm) {
+            uploadSection.classList.remove('minimized');
+            uploadForm.style.display = 'block';
+            
+            // Remove minimized header
+            const minimizedHeader = uploadSection.querySelector('.minimized-header');
+            if (minimizedHeader) {
+                minimizedHeader.remove();
+            }
+        }
+    };
 
     // Initialize with placeholder charts
     setTimeout(() => {
