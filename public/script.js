@@ -71,7 +71,7 @@ document.addEventListener('DOMContentLoaded', function() {
         showLoadingSpinner(true);
 
         try {
-            const response = await fetch('/api/process-excel', {
+            const response = await fetch('/api', {
                 method: 'POST',
                 body: formData
             });
@@ -1198,6 +1198,10 @@ document.addEventListener('DOMContentLoaded', function() {
                         ticks: { color: '#e2e8f0' },
                         grid: { color: 'rgba(74, 85, 104, 0.3)' }
                     }
+                },
+                animation: {
+                    duration: 1200,
+                    easing: 'easeOutBounce'
                 }
             }
         });
@@ -1807,7 +1811,7 @@ document.addEventListener('DOMContentLoaded', function() {
             labels: sorted.map(([bdm]) => bdm),
             positions: sorted.map(([,stats]) => stats.positions),
             cvsShared: sorted.map(([,stats]) => stats.cvsShared),
-            recruiters: sorted.map(([,stats]) => stats.recruiters.size),
+            Recruiters: sorted.map(([,stats]) => stats.recruiters.size),
             clients: sorted.map(([,stats]) => stats.clients.size)
         };
     }
