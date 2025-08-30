@@ -44,6 +44,138 @@ const upload = multer({
   }
 });
 
+// Function to parse recruitment Excel data
+function parseRecruitmentData(filePath) {
+  try {
+    const workbook = XLSX.readFile(filePath);
+    const sheetName = workbook.SheetNames[0];
+    const worksheet = workbook.Sheets[sheetName];
+    
+    // Convert to JSON with header mapping
+    const rawData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+    
+    if (rawData.length === 0) {
+      throw new Error('Excel file is empty');
+    }
+    
+    // Get headers from first row
+    const headers = rawData[0];
+    const dataRows = rawData.slice(1);
+    
+    // Expected headers mapping
+    const expectedHeaders = [
+      'Recruiter',
+      'BDM', 
+      'Client Name',
+      'Position Name',
+      'No Of Position',
+      'Requisition Logged Date',
+      'Number Of CVs',
+      'Position On Hold Date',
+      'Days',
+      'Remarks'
+    ];
+    
+    // Helper function to convert Excel date serial to JS Date
+    function convertExcelDate(excelDate) {
+      if (!excelDate) return null;
+      
+      // If it's already a valid date string
+      if (typeof excelDate === 'string') {
+        const parsed = new Date(excelDate);
+        return isNaN(parsed.getTime()) ? null : parsed.toISOString().split('T')[0];
+      }
+      
+      // If it's an Excel serial number
+      if (typeof excelDate === 'number') {
+        const excelEpoch = new Date(1900, 0, 1);
+        const days = excelDate - 2; // Excel has a leap year bug
+        const jsDate = new Date(excelEpoch.getTime() + days * 24 * 60 * 60 * 1000);
+        return jsDate.toISOString().split('T')[0];
+      }
+      
+      return null;
+    }
+    
+    // Helper function to safely get cell value
+    function getCellValue(value, type = 'string') {
+      if (value === undefined || value === null || value === '') {
+        return null;
+      }
+      
+      switch (type) {
+        case 'number':
+          const num = Number(value);
+          return isNaN(num) ? null : num;
+        case 'date':
+          return convertExcelDate(value);
+        default:
+          return String(value).trim();
+      }
+    }
+    
+    // Parse data rows
+    const parsedData = dataRows.map((row, index) => {
+      const record = {
+        rowNumber: index + 2, // +2 because we skip header and arrays are 0-indexed
+        recruiter: getCellValue(row[0]),
+        bdm: getCellValue(row[1]),
+        clientName: getCellValue(row[2]),
+        positionName: getCellValue(row[3]),
+        noOfPosition: getCellValue(row[4], 'number'),
+        requisitionLoggedDate: getCellValue(row[5], 'date'),
+        numberOfCVs: getCellValue(row[6], 'number'),
+        positionOnHoldDate: getCellValue(row[7], 'date'),
+        days: getCellValue(row[8], 'number'),
+        remarks: getCellValue(row[9])
+      };
+      
+      return record;
+    }).filter(record => {
+      // Filter out completely empty rows
+      return Object.values(record).some(value => 
+        value !== null && value !== undefined && value !== ''
+      );
+    });
+    
+    // Generate summary statistics
+    const summary = {
+      totalRecords: parsedData.length,
+      totalPositions: parsedData.reduce((sum, record) => 
+        sum + (record.noOfPosition || 0), 0),
+      totalCVs: parsedData.reduce((sum, record) => 
+        sum + (record.numberOfCVs || 0), 0),
+      uniqueRecruiters: [...new Set(parsedData
+        .map(r => r.recruiter)
+        .filter(r => r !== null))].length,
+      uniqueClients: [...new Set(parsedData
+        .map(r => r.clientName)
+        .filter(r => r !== null))].length,
+      positionsOnHold: parsedData.filter(r => r.positionOnHoldDate !== null).length,
+      averageDays: parsedData.filter(r => r.days !== null).length > 0 
+        ? Math.round(parsedData.reduce((sum, r) => sum + (r.days || 0), 0) / 
+          parsedData.filter(r => r.days !== null).length) 
+        : 0
+    };
+    
+    return {
+      success: true,
+      data: parsedData,
+      summary: summary,
+      headers: expectedHeaders,
+      processedAt: new Date().toISOString()
+    };
+    
+  } catch (error) {
+    return {
+      success: false,
+      error: error.message,
+      data: null,
+      summary: null
+    };
+  }
+}
+
 // Routes
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'views', 'index.html'));
@@ -60,20 +192,32 @@ app.post('/api/upload', upload.single('recruitmentData'), (req, res) => {
       return res.status(400).json({ error: 'No file uploaded' });
     }
 
-    // Parse Excel/CSV file
-    const workbook = XLSX.readFile(req.file.path);
-    const sheetName = workbook.SheetNames[0];
-    const worksheet = workbook.Sheets[sheetName];
-    const data = XLSX.utils.sheet_to_json(worksheet);
+    // Parse recruitment data using our custom function
+    const result = parseRecruitmentData(req.file.path);
+    
+    if (!result.success) {
+      return res.status(400).json({ 
+        error: 'Failed to parse recruitment data: ' + result.error 
+      });
+    }
 
     res.json({
-      message: 'File uploaded and processed successfully',
+      message: 'Recruitment data uploaded and processed successfully',
       filename: req.file.originalname,
       savedAs: req.file.filename,
-      rowCount: data.length,
-      data: data,
-      preview: data.slice(0, 5)
+      summary: result.summary,
+      data: result.data,
+      preview: result.data.slice(0, 5),
+      processedAt: result.processedAt
     });
+
+    // Clean up uploaded file after processing
+    setTimeout(() => {
+      if (fs.existsSync(req.file.path)) {
+        fs.unlinkSync(req.file.path);
+      }
+    }, 5000); // Delete after 5 seconds
+
   } catch (error) {
     console.error('Error processing file:', error);
     res.status(500).json({ error: 'Failed to process uploaded file' });
@@ -87,30 +231,36 @@ app.post('/api/process-excel', upload.single('excelFile'), (req, res) => {
       return res.status(400).json({ error: 'No Excel file provided' });
     }
 
-    const workbook = XLSX.readFile(req.file.path);
-    const sheetName = workbook.SheetNames[0];
-    const worksheet = workbook.Sheets[sheetName];
-    const jsonData = XLSX.utils.sheet_to_json(worksheet);
+    // Use our specialized recruitment data parser
+    const result = parseRecruitmentData(req.file.path);
 
-    // Process the data - example analytics
-    const analytics = {
-      totalRows: jsonData.length,
-      columns: Object.keys(jsonData[0] || {}),
-      summary: {
-        firstRecord: jsonData[0] || null,
-        lastRecord: jsonData[jsonData.length - 1] || null
-      },
-      processedAt: new Date().toISOString()
-    };
+    if (!result.success) {
+      return res.status(400).json({ 
+        error: 'Failed to parse recruitment data: ' + result.error 
+      });
+    }
 
     res.json({
       success: true,
-      analytics: analytics,
-      data: jsonData
+      filename: req.file.originalname,
+      summary: result.summary,
+      analytics: {
+        totalRecords: result.summary.totalRecords,
+        totalPositions: result.summary.totalPositions,
+        totalCVs: result.summary.totalCVs,
+        uniqueRecruiters: result.summary.uniqueRecruiters,
+        uniqueClients: result.summary.uniqueClients,
+        positionsOnHold: result.summary.positionsOnHold,
+        averageDays: result.summary.averageDays
+      },
+      data: result.data,
+      processedAt: result.processedAt
     });
 
     // Clean up uploaded file
-    fs.unlinkSync(req.file.path);
+    if (fs.existsSync(req.file.path)) {
+      fs.unlinkSync(req.file.path);
+    }
 
   } catch (error) {
     console.error('Error processing Excel file:', error);
