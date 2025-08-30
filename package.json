@@ -5,8 +5,8 @@
   "description": "A recruitment analytics dashboard for analyzing hiring data",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js",
-    "dev": "node index.js",
+    "start": "node app.js",
+    "dev": "node app.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": ["recruitment", "analytics", "dashboard", "hr"],
