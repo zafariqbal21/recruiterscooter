@@ -1333,8 +1333,15 @@ document.addEventListener('DOMContentLoaded', function() {
     // Data Processing Functions
     function getPositionStatusData() {
         const data = currentData.data || [];
-        const active = data.filter(r => !r.positionOnHoldDate).length;
-        const onHold = data.filter(r => r.positionOnHoldDate).length;
+        
+        // Sum actual positions, not just count records
+        const active = data
+            .filter(r => !r.positionOnHoldDate)
+            .reduce((sum, record) => sum + (record.noOfPosition || 1), 0);
+            
+        const onHold = data
+            .filter(r => r.positionOnHoldDate)
+            .reduce((sum, record) => sum + (record.noOfPosition || 1), 0);
 
         return {
             labels: ['Active', 'On Hold'],
