@@ -165,7 +165,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const tableBody = document.getElementById('dataTableBody');
 
         if (!data || data.length === 0) {
-            tableBody.innerHTML = '<tr><td colspan="13" class="no-data">No data available</td></tr>';
+            tableBody.innerHTML = '<tr><td colspan="14" class="no-data">No data available</td></tr>';
             return;
         }
 
@@ -175,13 +175,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 <td>${record.bdm || '-'}</td>
                 <td>${record.clientName || '-'}</td>
                 <td>${record.positionName || '-'}</td>
-                <td>${record.noOfPosition || '-'}</td>
+                <td>${record.noOfPosition || 0}</td>
                 <td>${record.requisitionLoggedDate || '-'}</td>
-                <td>${record.numberOfCVs || '-'}</td>
+                <td>${record.numberOfCVs || 0}</td>
                 <td>${record.firstCVSharedDate || '-'}</td>
                 <td>${record.lastCVSharedDate || '-'}</td>
-                <td>${record.cvsSharedCount || '-'}</td>
-                <td>${record.daysToFirstCV !== null ? record.daysToFirstCV : '-'}</td>
+                <td>${record.cvsSharedCount || 0}</td>
+                <td>${record.daysToFirstCV !== null && record.daysToFirstCV !== undefined ? record.daysToFirstCV : '-'}</td>
                 <td>${record.positionOnHoldDate || '-'}</td>
                 <td>${record.days || '-'}</td>
                 <td>${record.remarks || '-'}</td>

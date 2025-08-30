@@ -78,31 +78,41 @@ function parseRecruitmentData(filePath) {
     // Order matters - more specific matches should come first
     const headerMapping = {};
     const expectedHeaders = {
-      'positionOnHoldDate': ['position on hold date', 'on hold date', 'hold date', 'position on hold', 'onhold date', 'on-hold date', 'position hold date', 'hold_date'],
-      'noOfPosition': ['no of position', 'number of positions', 'positions count', 'position count'],
-      'requisitionLoggedDate': ['requisition logged date', 'logged date', 'req date', 'start date'],
-      'numberOfCVs': ['number of cvs', 'cvs', 'cv count', 'resumes'],
-      'positionName': ['position name', 'position', 'job title', 'role'],
-      'recruiter': ['recruiter', 'recruiter name'],
-      'bdm': ['bdm', 'business development manager'],
-      'clientName': ['client name', 'client', 'company name'],
-      'days': ['days', 'duration', 'days taken'],
-      'remarks': ['remarks', 'comments', 'notes'],
-      'cvsSharedDate': ['cvs shared date', 'cv shared date', 'shared date', 'cvs date', 'cv date']
+      'positionOnHoldDate': ['position on hold date', 'on hold date', 'hold date', 'position on hold', 'onhold date', 'on-hold date', 'position hold date', 'hold_date', 'on hold', 'position_on_hold_date'],
+      'noOfPosition': ['no of position', 'number of positions', 'positions count', 'position count', 'no of positions'],
+      'requisitionLoggedDate': ['requisition logged date', 'logged date', 'req date', 'start date', 'requisition date'],
+      'numberOfCVs': ['number of cvs', 'cvs', 'cv count', 'resumes', 'number of cv', 'cv_count'],
+      'positionName': ['position name', 'position', 'job title', 'role', 'position_name'],
+      'recruiter': ['recruiter', 'recruiter name', 'recruiter_name'],
+      'bdm': ['bdm', 'business development manager', 'business_development_manager'],
+      'clientName': ['client name', 'client', 'company name', 'client_name', 'company'],
+      'days': ['days', 'duration', 'days taken', 'total_days'],
+      'remarks': ['remarks', 'comments', 'notes', 'remark'],
+      'cvsSharedDate': ['cvs shared date', 'cv shared date', 'shared date', 'cvs date', 'cv date', 'cv_shared_date', 'cvs_shared_date']
     };
     
     // Find column indices by matching header names (case-insensitive)
     rawHeaders.forEach((header, index) => {
       if (!header) return;
       
-      const normalizedHeader = String(header).toLowerCase().trim();
+      const normalizedHeader = String(header).toLowerCase().trim()
+        .replace(/[^a-z0-9\s]/g, '') // Remove special characters
+        .replace(/\s+/g, ' '); // Normalize spaces
       
       for (const [fieldName, possibleNames] of Object.entries(expectedHeaders)) {
+        // Skip if already mapped
+        if (headerMapping[fieldName] !== undefined) continue;
+        
         // Use exact matching first, then fallback to partial matching
-        const exactMatch = possibleNames.some(name => normalizedHeader === name);
-        const partialMatch = !exactMatch && possibleNames.some(name => 
-          normalizedHeader.includes(name) && name.length > 3 // Avoid very short partial matches
-        );
+        const exactMatch = possibleNames.some(name => {
+          const normalizedName = name.replace(/[^a-z0-9\s]/g, '').replace(/\s+/g, ' ');
+          return normalizedHeader === normalizedName;
+        });
+        
+        const partialMatch = !exactMatch && possibleNames.some(name => {
+          const normalizedName = name.replace(/[^a-z0-9\s]/g, '').replace(/\s+/g, ' ');
+          return normalizedHeader.includes(normalizedName) && normalizedName.length > 3;
+        });
         
         if (exactMatch || partialMatch) {
           headerMapping[fieldName] = index;
@@ -230,31 +240,41 @@ function parseRecruitmentData(filePath) {
           value === 'NULL' ||
           (typeof value === 'string' && value.trim() === '') ||
           (typeof value === 'string' && value.trim().toLowerCase() === 'na') ||
-          (typeof value === 'string' && value.trim().toLowerCase() === 'n/a')) {
+          (typeof value === 'string' && value.trim().toLowerCase() === 'n/a') ||
+          (typeof value === 'string' && value.trim() === '-') ||
+          (typeof value === 'string' && value.trim() === '--')) {
         return null;
       }
       
       switch (type) {
         case 'number':
           const num = Number(value);
-          return isNaN(num) ? null : num;
+          return isNaN(num) || !isFinite(num) ? null : num;
         case 'date':
           const dateResult = convertExcelDate(value);
           // Additional validation for date
-          if (dateResult && dateResult !== 'null' && dateResult !== '') {
+          if (dateResult && dateResult !== 'null' && dateResult !== '' && dateResult !== 'Invalid Date') {
             return dateResult;
           }
           return null;
         default:
           const strValue = String(value).trim();
-          return strValue === '' || strValue === 'null' || strValue === 'NULL' ? null : strValue;
+          return (strValue === '' || strValue === 'null' || strValue === 'NULL' || strValue === '-' || strValue === '--') ? null : strValue;
       }
     }
     
     // Parse data rows using dynamic header mapping
     const parsedData = dataRows.map((row, index) => {
-      // Parse CVs shared dates
-      const cvsSharedInfo = parseCVsSharedDates(row[headerMapping.cvsSharedDate]);
+      // Parse CVs shared dates - handle case where column might not exist
+      const cvsSharedInfo = headerMapping.cvsSharedDate !== undefined 
+        ? parseCVsSharedDates(row[headerMapping.cvsSharedDate])
+        : { dates: [], firstDate: null, lastDate: null, count: 0 };
+      
+      // Get position count, default to 1 if not specified
+      const positionCount = getCellValue(row[headerMapping.noOfPosition], 'number') || 1;
+      
+      // Get CV count
+      const cvCount = getCellValue(row[headerMapping.numberOfCVs], 'number') || 0;
       
       const record = {
         rowNumber: index + 2, // +2 because we skip header and arrays are 0-indexed
@@ -262,9 +282,9 @@ function parseRecruitmentData(filePath) {
         bdm: getCellValue(row[headerMapping.bdm]),
         clientName: getCellValue(row[headerMapping.clientName]),
         positionName: getCellValue(row[headerMapping.positionName]),
-        noOfPosition: getCellValue(row[headerMapping.noOfPosition], 'number'),
+        noOfPosition: positionCount,
         requisitionLoggedDate: getCellValue(row[headerMapping.requisitionLoggedDate], 'date'),
-        numberOfCVs: getCellValue(row[headerMapping.numberOfCVs], 'number'),
+        numberOfCVs: cvCount,
         positionOnHoldDate: getCellValue(row[headerMapping.positionOnHoldDate], 'date'),
         days: getCellValue(row[headerMapping.days], 'number'),
         remarks: getCellValue(row[headerMapping.remarks]),
@@ -276,19 +296,37 @@ function parseRecruitmentData(filePath) {
       
       // Calculate days from requisition to first CV shared
       if (record.requisitionLoggedDate && record.firstCVSharedDate) {
-        const reqDate = new Date(record.requisitionLoggedDate);
-        const firstCVDate = new Date(record.firstCVSharedDate);
-        record.daysToFirstCV = Math.floor((firstCVDate - reqDate) / (1000 * 60 * 60 * 24));
+        try {
+          const reqDate = new Date(record.requisitionLoggedDate);
+          const firstCVDate = new Date(record.firstCVSharedDate);
+          if (!isNaN(reqDate.getTime()) && !isNaN(firstCVDate.getTime())) {
+            record.daysToFirstCV = Math.floor((firstCVDate - reqDate) / (1000 * 60 * 60 * 24));
+          } else {
+            record.daysToFirstCV = null;
+          }
+        } catch (e) {
+          record.daysToFirstCV = null;
+        }
       } else {
         record.daysToFirstCV = null;
       }
       
+      // Debug log for first few records
+      if (index < 3) {
+        console.log(`Record ${index + 1}:`, {
+          recruiter: record.recruiter,
+          positionOnHoldDate: record.positionOnHoldDate,
+          numberOfCVs: record.numberOfCVs,
+          firstCVSharedDate: record.firstCVSharedDate,
+          daysToFirstCV: record.daysToFirstCV
+        });
+      }
+      
       return record;
     }).filter(record => {
-      // Filter out completely empty rows
-      return Object.values(record).some(value => 
-        value !== null && value !== undefined && value !== ''
-      );
+      // Filter out completely empty rows - but keep rows with at least one meaningful field
+      return record.recruiter || record.clientName || record.positionName || 
+             record.numberOfCVs > 0 || record.noOfPosition > 0;
     });
     
     // Generate summary statistics
