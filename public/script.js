@@ -1181,42 +1181,31 @@ document.addEventListener('DOMContentLoaded', function() {
         // Client Response Time Line Chart
         const responseData = getClientResponseTimeData();
         renderChart('clientDaysChart', {
-            type: 'bar',
+            type: 'line',
             data: {
-                labels: cvTrendData.months,
+                labels: responseData.labels,
                 datasets: [{
-                    label: 'CV Submissions',
-                    data: cvTrendData.submissions,
-                    backgroundColor: '#48bb78',
-                    borderColor: '#2f855a',
-                    borderWidth: 1,
-                    borderRadius: 4,
-                    yAxisID: 'y'
-                }, {
-                    label: 'Conversion Rate (%)',
-                    data: cvTrendData.conversionRates,
-                    type: 'line',
-                    borderColor: '#ed8936',
-                    backgroundColor: 'rgba(237, 137, 54, 0.1)',
+                    label: 'Average Response Time (Days)',
+                    data: responseData.values,
+                    borderColor: '#f56565',
+                    backgroundColor: 'rgba(245, 101, 101, 0.1)',
                     borderWidth: 3,
-                    pointBackgroundColor: '#ed8936',
+                    pointBackgroundColor: '#f56565',
                     pointBorderColor: '#ffffff',
                     pointBorderWidth: 2,
                     pointRadius: 6,
-                    yAxisID: 'y1'
+                    pointHoverRadius: 8,
+                    fill: true,
+                    tension: 0.4
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                interaction: {
-                    mode: 'index',
-                    intersect: false
-                },
                 plugins: {
                     title: {
                         display: true,
-                        text: 'Monthly CV Submission Trends & Conversion',
+                        text: 'Client Response Time Trends',
                         color: '#e2e8f0',
                         font: { size: 16, weight: 'bold' }
                     },
@@ -1231,56 +1220,41 @@ document.addEventListener('DOMContentLoaded', function() {
                         borderWidth: 1,
                         callbacks: {
                             label: function(context) {
-                                if (context.datasetIndex === 0) {
-                                    return `CV Submissions: ${context.parsed.y}`;
-                                } else {
-                                    return `Conversion Rate: ${context.parsed.y.toFixed(1)}%`;
-                                }
+                                return `Average Response: ${context.parsed.y} days`;
+                            },
+                            afterLabel: function(context) {
+                                const value = context.parsed.y;
+                                let status = 'Excellent';
+                                if (value > 30) status = 'Needs Improvement';
+                                else if (value > 15) status = 'Good';
+                                return `Status: ${status}`;
                             }
                         }
                     }
                 },
                 scales: {
                     x: {
-                        ticks: { color: '#e2e8f0' },
+                        ticks: { 
+                            color: '#e2e8f0',
+                            maxRotation: 45,
+                            minRotation: 0
+                        },
                         grid: { color: 'rgba(74, 85, 104, 0.3)' }
                     },
                     y: {
-                        type: 'linear',
-                        display: true,
-                        position: 'left',
                         beginAtZero: true,
-                        ticks: { color: '#e2e8f0' },
-                        grid: { color: 'rgba(74, 85, 104, 0.3)' },
-                        title: {
-                            display: true,
-                            text: 'CV Submissions',
-                            color: '#e2e8f0'
-                        }
-                    },
-                    y1: {
-                        type: 'linear',
-                        display: true,
-                        position: 'right',
-                        beginAtZero: true,
-                        max: 100,
                         ticks: { 
                             color: '#e2e8f0',
                             callback: function(value) {
-                                return value + '%';
+                                return value + ' days';
                             }
                         },
-                        grid: { drawOnChartArea: false },
-                        title: {
-                            display: true,
-                            text: 'Conversion Rate (%)',
-                            color: '#e2e8f0'
-                        }
+                        grid: { color: 'rgba(74, 85, 104, 0.3)' }
                     }
                 },
                 animation: {
-                    duration: 1400,
-                    easing: 'easeOutQuart'
+                    duration: 1500,
+                    easing: 'easeOutCubic'
                 }
             }
         });
@@ -1334,14 +1308,32 @@ document.addEventListener('DOMContentLoaded', function() {
     function getPositionStatusData() {
         const data = currentData.data || [];
         
+        // Debug logging
+        console.log('Total records:', data.length);
+        console.log('Sample records with position data:', data.slice(0, 3).map(r => ({
+            client: r.clientName,
+            position: r.positionName,
+            noOfPosition: r.noOfPosition,
+            onHoldDate: r.positionOnHoldDate
+        })));
+        
         // Sum actual positions, not just count records
-        const active = data
-            .filter(r => !r.positionOnHoldDate)
-            .reduce((sum, record) => sum + (record.noOfPosition || 1), 0);
+        const activeRecords = data.filter(r => !r.positionOnHoldDate);
+        const onHoldRecords = data.filter(r => r.positionOnHoldDate);
+        
+        const active = activeRecords.reduce((sum, record) => {
+            const positions = record.noOfPosition || 1;
+            console.log(`Active record: ${record.clientName} - ${record.positionName}, positions: ${positions}`);
+            return sum + positions;
+        }, 0);
             
-        const onHold = data
-            .filter(r => r.positionOnHoldDate)
-            .reduce((sum, record) => sum + (record.noOfPosition || 1), 0);
+        const onHold = onHoldRecords.reduce((sum, record) => {
+            const positions = record.noOfPosition || 1;
+            console.log(`On Hold record: ${record.clientName} - ${record.positionName}, positions: ${positions}`);
+            return sum + positions;
+        }, 0);
+
+        console.log('Final calculation - Active:', active, 'On Hold:', onHold);
 
         return {
             labels: ['Active', 'On Hold'],
