@@ -7,9 +7,8 @@ document.addEventListener('DOMContentLoaded', function() {
     let currentData = null;
     let charts = {};
 
-    // API Configuration - Use external service for file processing
+    // API Configuration
     const API_BASE_URL = window.location.origin;
-    const EXTERNAL_API_URL = 'https://your-replit-app.replit.app'; // Your Replit API server
 
 
     // Tab Navigation
