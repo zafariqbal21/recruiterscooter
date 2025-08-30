@@ -118,6 +118,13 @@ document.addEventListener('DOMContentLoaded', function() {
             <p><strong>Processed at:</strong> ${new Date(result.processedAt || Date.now()).toLocaleString()}</p>
         `;
         uploadStatus.style.display = 'block';
+        
+        // Auto-hide success message after 10 seconds
+        setTimeout(() => {
+            if (uploadStatus && uploadStatus.style.display === 'block' && !uploadResults.classList.contains('error')) {
+                uploadStatus.style.display = 'none';
+            }
+        }, 10000);
     }
 
     function displayError(error) {
