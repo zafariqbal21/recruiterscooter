@@ -1508,30 +1508,51 @@ document.addEventListener('DOMContentLoaded', function() {
         const data = currentData.data || [];
         const monthlyStats = {};
 
+        console.log('Processing monthly trend data for', data.length, 'records');
+
         // Process data by month
         data.forEach(record => {
             if (record.requisitionLoggedDate) {
-                const date = new Date(record.requisitionLoggedDate);
-                if (!isNaN(date.getTime())) {
-                    const monthKey = date.toLocaleDateString('en-US', { year: 'numeric', month: 'short' });
+                try {
+                    const date = new Date(record.requisitionLoggedDate);
+                    if (!isNaN(date.getTime()) && date.getFullYear() > 1900) {
+                        const monthKey = date.getFullYear() + '-' + String(date.getMonth() + 1).padStart(2, '0');
+                        const displayMonth = date.toLocaleDateString('en-US', { year: 'numeric', month: 'short' });
 
-                    if (!monthlyStats[monthKey]) {
-                        monthlyStats[monthKey] = { positions: 0, cvsSubmitted: 0 };
+                        if (!monthlyStats[monthKey]) {
+                            monthlyStats[monthKey] = { 
+                                positions: 0, 
+                                cvsSubmitted: 0,
+                                displayName: displayMonth
+                            };
+                        }
+                        monthlyStats[monthKey].positions += record.noOfPosition || 1;
+                        monthlyStats[monthKey].cvsSubmitted += record.numberOfCVs || 0;
                     }
-                    monthlyStats[monthKey].positions += record.noOfPosition || 1;
-                    monthlyStats[monthKey].cvsSubmitted += record.numberOfCVs || 0;
+                } catch (e) {
+                    console.warn('Date parsing error for record:', record.requisitionLoggedDate);
                 }
             }
         });
 
-        // Get last 12 months or available data
-        const sortedMonths = Object.keys(monthlyStats).sort((a, b) => new Date(a + ' 1, 2000') - new Date(b + ' 1, 2000'));
+        console.log('Monthly stats:', monthlyStats);
+
+        // Sort months and get recent data
+        const sortedMonths = Object.keys(monthlyStats).sort();
         const recentMonths = sortedMonths.slice(-12);
 
+        if (recentMonths.length === 0) {
+            return {
+                months: ['No Data'],
+                positions: [0],
+                cvsSubmitted: [0]
+            };
+        }
+
         return {
-            months: recentMonths.length > 0 ? recentMonths : ['No Data'],
-            positions: recentMonths.map(month => monthlyStats[month]?.positions || 0),
-            cvsSubmitted: recentMonths.map(month => monthlyStats[month]?.cvsSubmitted || 0)
+            months: recentMonths.map(key => monthlyStats[key].displayName),
+            positions: recentMonths.map(key => monthlyStats[key].positions),
+            cvsSubmitted: recentMonths.map(key => monthlyStats[key].cvsSubmitted)
         };
     }
 
@@ -1569,43 +1590,62 @@ document.addEventListener('DOMContentLoaded', function() {
         const data = currentData.data || [];
         const monthlyStats = {};
 
+        console.log('Processing requisition vs CV timeline data for', data.length, 'records');
+
         data.forEach(record => {
             // Process by requisition date
             if (record.requisitionLoggedDate) {
-                const reqDate = new Date(record.requisitionLoggedDate);
-                if (!isNaN(reqDate.getTime())) {
-                    const monthKey = reqDate.toLocaleDateString('en-US', { year: 'numeric', month: 'short' });
+                try {
+                    const reqDate = new Date(record.requisitionLoggedDate);
+                    if (!isNaN(reqDate.getTime()) && reqDate.getFullYear() > 1900) {
+                        const monthKey = reqDate.getFullYear() + '-' + String(reqDate.getMonth() + 1).padStart(2, '0');
+                        const displayMonth = reqDate.toLocaleDateString('en-US', { year: 'numeric', month: 'short' });
 
-                    if (!monthlyStats[monthKey]) {
-                        monthlyStats[monthKey] = { 
-                            positions: 0, 
-                            cvsSubmitted: 0, 
-                            totalDaysToCV: 0, 
-                            recordsWithCV: 0 
-                        };
-                    }
-                    monthlyStats[monthKey].positions += record.noOfPosition || 1;
-                    monthlyStats[monthKey].cvsSubmitted += record.numberOfCVs || 0;
+                        if (!monthlyStats[monthKey]) {
+                            monthlyStats[monthKey] = { 
+                                positions: 0, 
+                                cvsSubmitted: 0, 
+                                totalDaysToCV: 0, 
+                                recordsWithCV: 0,
+                                displayName: displayMonth
+                            };
+                        }
+                        monthlyStats[monthKey].positions += record.noOfPosition || 1;
+                        monthlyStats[monthKey].cvsSubmitted += record.numberOfCVs || 0;
 
-                    // Process days to first CV
-                    if (record.daysToFirstCV !== null && record.daysToFirstCV !== undefined) {
-                        monthlyStats[monthKey].totalDaysToCV += record.daysToFirstCV;
-                        monthlyStats[monthKey].recordsWithCV += 1;
+                        // Process days to first CV
+                        if (record.daysToFirstCV !== null && record.daysToFirstCV !== undefined) {
+                            monthlyStats[monthKey].totalDaysToCV += record.daysToFirstCV;
+                            monthlyStats[monthKey].recordsWithCV += 1;
+                        }
                     }
+                } catch (e) {
+                    console.warn('Date parsing error for requisition date:', record.requisitionLoggedDate);
                 }
             }
         });
 
-        // Fill in missing months for continuity
-        const sortedMonths = Object.keys(monthlyStats).sort((a, b) => new Date(a + ' 1, 2000') - new Date(b + ' 1, 2000'));
+        console.log('Requisition timeline stats:', monthlyStats);
+
+        // Sort months and get recent data
+        const sortedMonths = Object.keys(monthlyStats).sort();
         const recentMonths = sortedMonths.slice(-12);
 
+        if (recentMonths.length === 0) {
+            return {
+                months: ['No Data'],
+                positions: [0],
+                cvsSubmitted: [0],
+                avgDaysToCV: [0]
+            };
+        }
+
         return {
-            months: recentMonths.length > 0 ? recentMonths : ['No Data'],
-            positions: recentMonths.map(month => monthlyStats[month]?.positions || 0),
-            cvsSubmitted: recentMonths.map(month => monthlyStats[month]?.cvsSubmitted || 0),
-            avgDaysToCV: recentMonths.map(month => {
-                const stats = monthlyStats[month];
+            months: recentMonths.map(key => monthlyStats[key].displayName),
+            positions: recentMonths.map(key => monthlyStats[key].positions),
+            cvsSubmitted: recentMonths.map(key => monthlyStats[key].cvsSubmitted),
+            avgDaysToCV: recentMonths.map(key => {
+                const stats = monthlyStats[key];
                 return stats && stats.recordsWithCV > 0 
                     ? Math.round(stats.totalDaysToCV / stats.recordsWithCV)
                     : 0;
