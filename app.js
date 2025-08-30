@@ -18,7 +18,19 @@ if (!fs.existsSync('uploads')) {
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(express.static('public'));
+
+// Serve static files with proper headers
+app.use(express.static('public', {
+  setHeaders: (res, path) => {
+    if (path.endsWith('.js')) {
+      res.setHeader('Content-Type', 'application/javascript');
+    } else if (path.endsWith('.css')) {
+      res.setHeader('Content-Type', 'text/css');
+    } else if (path.endsWith('.html')) {
+      res.setHeader('Content-Type', 'text/html');
+    }
+  }
+}));
 
 // Configure multer for file uploads
 const storage = multer.diskStorage({
@@ -63,16 +75,17 @@ function parseRecruitmentData(filePath) {
     const dataRows = rawData.slice(1);
     
     // Create a mapping from normalized header names to column indices
+    // Order matters - more specific matches should come first
     const headerMapping = {};
     const expectedHeaders = {
-      'recruiter': ['recruiter', 'recruiter name'],
-      'bdm': ['bdm', 'business development manager'],
-      'clientName': ['client name', 'client', 'company name'],
-      'positionName': ['position name', 'position', 'job title', 'role'],
+      'positionOnHoldDate': ['position on hold date', 'on hold date', 'hold date', 'position on hold', 'onhold date', 'on-hold date'],
       'noOfPosition': ['no of position', 'number of positions', 'positions count'],
       'requisitionLoggedDate': ['requisition logged date', 'logged date', 'req date', 'start date'],
       'numberOfCVs': ['number of cvs', 'cvs', 'cv count', 'resumes'],
-      'positionOnHoldDate': ['position on hold date', 'on hold date', 'hold date', 'position on hold', 'onhold date', 'on-hold date'],
+      'positionName': ['position name', 'position', 'job title', 'role'],
+      'recruiter': ['recruiter', 'recruiter name'],
+      'bdm': ['bdm', 'business development manager'],
+      'clientName': ['client name', 'client', 'company name'],
       'days': ['days', 'duration', 'days taken'],
       'remarks': ['remarks', 'comments', 'notes']
     };
@@ -84,9 +97,15 @@ function parseRecruitmentData(filePath) {
       const normalizedHeader = String(header).toLowerCase().trim();
       
       for (const [fieldName, possibleNames] of Object.entries(expectedHeaders)) {
-        if (possibleNames.some(name => normalizedHeader.includes(name) || name.includes(normalizedHeader))) {
+        // Use exact matching first, then fallback to partial matching
+        const exactMatch = possibleNames.some(name => normalizedHeader === name);
+        const partialMatch = !exactMatch && possibleNames.some(name => 
+          normalizedHeader.includes(name) && name.length > 3 // Avoid very short partial matches
+        );
+        
+        if (exactMatch || partialMatch) {
           headerMapping[fieldName] = index;
-          console.log(`Mapped "${header}" to field "${fieldName}" at index ${index}`);
+          console.log(`Mapped "${header}" to field "${fieldName}" at index ${index}${exactMatch ? ' (exact)' : ' (partial)'}`);
           break;
         }
       }
@@ -199,7 +218,7 @@ function parseRecruitmentData(filePath) {
 
 // Routes
 app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'views', 'index.html'));
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 app.get('/api/health', (req, res) => {
@@ -311,9 +330,14 @@ app.use((error, req, res, next) => {
   res.status(500).json({ error: error.message || 'Internal server error' });
 });
 
-// 404 handler
-app.use('*', (req, res) => {
-  res.status(404).json({ error: 'Route not found' });
+// Handle client-side routing - serve index.html for non-API routes
+app.get('*', (req, res) => {
+  // If it's an API route, return 404 JSON
+  if (req.path.startsWith('/api/')) {
+    return res.status(404).json({ error: 'API route not found' });
+  }
+  // Otherwise serve the main HTML file
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 // Start server
