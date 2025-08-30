@@ -1,0 +1,56 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recruitment Analytics Dashboard</title>
+    <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Recruitment Analytics Dashboard</h1>
+            <p>Upload and analyze your recruitment data</p>
+        </header>
+
+        <main>
+            <section class="upload-section">
+                <h2>Upload Recruitment Data</h2>
+                <form id="uploadForm" enctype="multipart/form-data">
+                    <div class="file-input-wrapper">
+                        <input type="file" id="recruitmentData" name="recruitmentData" accept=".xlsx,.xls,.csv" required>
+                        <label for="recruitmentData">Choose Excel or CSV file</label>
+                    </div>
+                    <button type="submit">Upload & Analyze</button>
+                </form>
+            </section>
+
+            <section class="results-section" id="results" style="display: none;">
+                <h2>Results</h2>
+                <div id="uploadResults"></div>
+            </section>
+
+            <section class="analytics-section">
+                <h2>Analytics</h2>
+                <div class="metrics-grid">
+                    <div class="metric-card">
+                        <h3>Total Applications</h3>
+                        <span class="metric-value" id="totalApplications">-</span>
+                    </div>
+                    <div class="metric-card">
+                        <h3>Hired Candidates</h3>
+                        <span class="metric-value" id="hiredCandidates">-</span>
+                    </div>
+                    <div class="metric-card">
+                        <h3>Average Time to Hire</h3>
+                        <span class="metric-value" id="avgTimeToHire">-</span>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="/script.js"></script>
+</body>
+</html>
