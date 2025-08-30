@@ -1254,7 +1254,52 @@ document.addEventListener('DOMContentLoaded', function() {
             if (minimizedHeader) {
                 minimizedHeader.remove();
             }
+            
+            // Add "Keep Current File" button to the upload form
+            addKeepCurrentFileButton();
         }
+    };
+
+    // Add Keep Current File button when user expands upload section
+    function addKeepCurrentFileButton() {
+        const uploadForm = document.getElementById('uploadForm');
+        let keepFileBtn = document.getElementById('keepCurrentFileBtn');
+        
+        // Remove existing button if it exists
+        if (keepFileBtn) {
+            keepFileBtn.remove();
+        }
+        
+        // Only add if we have current data
+        if (currentData) {
+            keepFileBtn = document.createElement('button');
+            keepFileBtn.id = 'keepCurrentFileBtn';
+            keepFileBtn.type = 'button';
+            keepFileBtn.className = 'btn-secondary keep-file-btn';
+            keepFileBtn.innerHTML = '↩️ Keep Current File';
+            keepFileBtn.onclick = function() {
+                minimizeUploadSection();
+                // Reset file input
+                const fileInput = document.getElementById('recruitmentData');
+                const fileLabel = document.querySelector('label[for="recruitmentData"]');
+                fileInput.value = '';
+                fileLabel.innerHTML = `
+                    <span class="upload-icon">📂</span>
+                    <span>Choose Excel or CSV file</span>
+                    <span class="upload-hint">Drag & drop or click to browse</span>
+                `;
+                fileLabel.classList.remove('file-selected');
+            };
+            
+            // Insert after the upload button
+            const uploadBtn = uploadForm.querySelector('.btn-primary');
+            uploadBtn.parentNode.insertBefore(keepFileBtn, uploadBtn.nextSibling);
+        }
+    }
+
+    // Make function available globally for potential future use
+    window.keepCurrentFile = function() {
+        minimizeUploadSection();
     };
 
     // Initialize with placeholder charts

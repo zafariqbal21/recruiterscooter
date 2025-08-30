@@ -215,6 +215,23 @@ label[for="recruitmentData"].file-selected .upload-hint {
     border-color: var(--accent-primary);
 }
 
+.keep-file-btn {
+    margin-top: 15px;
+    background: var(--warning);
+    color: white;
+    border: 1px solid var(--warning);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.keep-file-btn:hover {
+    background: #d69e2e;
+    border-color: #d69e2e;
+    transform: translateY(-1px);
+}
+
 /* Navigation Tabs */
 .nav-tabs {
     display: flex;
