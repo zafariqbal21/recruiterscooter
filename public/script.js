@@ -72,7 +72,7 @@ document.addEventListener('DOMContentLoaded', function() {
         showLoadingSpinner(true);
 
         try {
-            const response = await fetch(`${EXTERNAL_API_URL}/api/process-excel`, {
+            const response = await fetch('/api/process-excel', {
                 method: 'POST',
                 body: formData
             });

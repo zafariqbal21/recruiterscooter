@@ -1,0 +1,118 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recruitment Analytics Dashboard</title>
+    <link rel="stylesheet" href="public/styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎯 Recruitment Analytics Dashboard</h1>
+            <p>Upload and analyze your recruitment data with interactive charts and insights</p>
+        </header>
+
+        <main>
+            <!-- Upload Section -->
+            <section class="upload-section">
+                <h2>📁 Upload Recruitment Data</h2>
+                <form id="uploadForm" enctype="multipart/form-data">
+                    <div class="file-input-wrapper">
+                        <input type="file" id="recruitmentData" name="recruitmentData" accept=".xlsx,.xls,.csv" required>
+                        <label for="recruitmentData">
+                            <span class="upload-icon">📊</span>
+                            <span>Choose Excel or CSV file</span>
+                            <span class="upload-hint">Drop your recruitment data file here or click to browse</span>
+                        </label>
+                    </div>
+                    
+                    <div class="button-group">
+                        <button type="submit" class="primary-btn">
+                            <span class="btn-icon">⬆️</span>
+                            Upload & Analyze
+                        </button>
+                    </div>
+                </form>
+
+                <!-- Loading Spinner -->
+                <div id="loadingSpinner" class="loading-spinner" style="display: none;">
+                    <div class="spinner"></div>
+                    <p>Processing your recruitment data...</p>
+                </div>
+            </section>
+
+            <!-- Results Section -->
+            <section class="results-section" id="results" style="display: none;">
+                <div class="section-header">
+                    <h2>📈 Analysis Results</h2>
+                    <div class="button-group">
+                        <button id="changeFileBtn" class="secondary-btn">
+                            <span class="btn-icon">🔄</span>
+                            Change File
+                        </button>
+                    </div>
+                </div>
+                <div id="uploadResults"></div>
+            </section>
+
+            <!-- Analytics Dashboard -->
+            <section class="analytics-section" id="analyticsSection" style="display: none;">
+                <h2>📊 Analytics Dashboard</h2>
+                
+                <!-- Summary Cards -->
+                <div class="metrics-grid" id="summaryCards">
+                    <!-- Cards will be populated by JavaScript -->
+                </div>
+
+                <!-- Charts Section -->
+                <div class="charts-container">
+                    <div class="chart-wrapper">
+                        <h3>👥 Recruiter Performance</h3>
+                        <canvas id="recruiterChart"></canvas>
+                    </div>
+                    
+                    <div class="chart-wrapper">
+                        <h3>🏢 Client Distribution</h3>
+                        <canvas id="clientChart"></canvas>
+                    </div>
+                    
+                    <div class="chart-wrapper">
+                        <h3>📈 Position Status</h3>
+                        <canvas id="positionChart"></canvas>
+                    </div>
+                    
+                    <div class="chart-wrapper">
+                        <h3>⏱️ Timeline Trends</h3>
+                        <canvas id="timelineChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Data Table -->
+                <div class="data-table-container">
+                    <h3>📋 Detailed Data</h3>
+                    <div class="table-wrapper">
+                        <table id="dataTable">
+                            <thead id="tableHeader">
+                                <!-- Headers will be populated by JavaScript -->
+                            </thead>
+                            <tbody id="tableBody">
+                                <!-- Data will be populated by JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <footer>
+            <p>&copy; 2024 Recruitment Analytics Dashboard - Powered by Advanced Data Processing</p>
+        </footer>
+    </div>
+
+    <!-- Include Chart.js for visualizations -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="public/script.js"></script>
+</body>
+</html>
