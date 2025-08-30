@@ -375,7 +375,7 @@ app.post('/api/upload', upload.single('recruitmentData'), (req, res) => {
 });
 
 // Process Excel data endpoint
-app.post('/api/process-excel', upload.single('excelFile'), (req, res) => {
+app.post('/api/process-excel', upload.single('recruitmentData'), (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ error: 'No Excel file provided' });
