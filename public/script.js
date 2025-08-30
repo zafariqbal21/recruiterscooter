@@ -1114,6 +1114,121 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
 
+        // Client Response Time Chart (moved from client tab to properly render)
+        const responseData = getClientResponseTimeData();
+        renderChart('clientDaysChart', {
+            type: 'line',
+            data: {
+                labels: responseData.labels,
+                datasets: [{
+                    label: 'Average Response Time (Days)',
+                    data: responseData.values,
+                    borderColor: '#f56565',
+                    backgroundColor: 'rgba(245, 101, 101, 0.1)',
+                    borderWidth: 3,
+                    pointBackgroundColor: '#f56565',
+                    pointBorderColor: '#ffffff',
+                    pointBorderWidth: 2,
+                    pointRadius: 6,
+                    pointHoverRadius: 8,
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Client Response Time Trends',
+                        color: '#e2e8f0',
+                        font: { size: 16, weight: 'bold' }
+                    },
+                    legend: {
+                        labels: { color: '#e2e8f0' }
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(45, 55, 72, 0.95)',
+                        titleColor: '#e2e8f0',
+                        bodyColor: '#e2e8f0',
+                        borderColor: '#4a5568',
+                        borderWidth: 1
+                    }
+                },
+                scales: {
+                    x: {
+                        ticks: { color: '#e2e8f0' },
+                        grid: { color: 'rgba(74, 85, 104, 0.3)' }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        ticks: { color: '#e2e8f0' },
+                        grid: { color: 'rgba(74, 85, 104, 0.3)' }
+                    }
+                }
+            }
+        });
+    }
+
+    function renderClientCharts() {
+        // Client Activity Overview
+        const activityData = getClientActivityData();
+        renderChart('clientActivityChart', {
+            type: 'bar',
+            data: {
+                labels: activityData.labels,
+                datasets: [{
+                    label: 'Total CVs',
+                    data: activityData.cvs,
+                    backgroundColor: '#4299e1',
+                    borderColor: '#2b6cb0',
+                    borderWidth: 1,
+                    borderRadius: 4
+                }, {
+                    label: 'Positions',
+                    data: activityData.positions,
+                    backgroundColor: '#ed8936',
+                    borderColor: '#c05621',
+                    borderWidth: 1,
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Client Activity Overview',
+                        color: '#e2e8f0',
+                        font: { size: 16, weight: 'bold' }
+                    },
+                    legend: {
+                        labels: { color: '#e2e8f0' }
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(45, 55, 72, 0.95)',
+                        titleColor: '#e2e8f0',
+                        bodyColor: '#e2e8f0',
+                        borderColor: '#4a5568',
+                        borderWidth: 1
+                    }
+                },
+                scales: {
+                    x: {
+                        ticks: { color: '#e2e8f0' },
+                        grid: { color: 'rgba(74, 85, 104, 0.3)' }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        ticks: { color: '#e2e8f0' },
+                        grid: { color: 'rgba(74, 85, 104, 0.3)' }
+                    }
+                }
+            }
+        });
+
         // Monthly CV Submissions with Efficiency
         const cvTrendData = getMonthlyCVTrendData();
         renderChart('monthlyCVChart', {
