@@ -1630,7 +1630,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             
             bdmStats[bdm].positions += record.noOfPosition || 1;
-            bdmStats[bdm].cvsShared += record.cvsSharedCount || 0;
+            bdmStats[bdm].cvsShared += record.numberOfCVs || 0; // Fixed: use numberOfCVs instead of cvsSharedCount
             
             if (record.recruiter) bdmStats[bdm].recruiters.add(record.recruiter);
             if (record.clientName) bdmStats[bdm].clients.add(record.clientName);
@@ -1667,7 +1667,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             
             bdmStats[bdm].positions += record.noOfPosition || 1;
-            bdmStats[bdm].cvsShared += record.cvsSharedCount || 0;
+            bdmStats[bdm].cvsShared += record.numberOfCVs || 0; // Fixed: use numberOfCVs instead of cvsSharedCount
             bdmStats[bdm].totalCVsReceived += record.numberOfCVs || 0;
             
             if (record.daysToFirstCV !== null) {
