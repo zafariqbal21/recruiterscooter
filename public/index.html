@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -31,7 +30,7 @@
                     <span>Upload & Analyze</span>
                 </button>
             </form>
-            
+
             <div class="upload-status" id="uploadStatus" style="display: none;">
                 <div id="uploadResults"></div>
             </div>
@@ -51,50 +50,72 @@
         <div class="tab-content">
             <!-- Overview Tab -->
             <div id="overview" class="tab-pane active">
-                <div class="metrics-grid">
-                    <div class="metric-card">
-                        <div class="metric-icon">📄</div>
-                        <div class="metric-info">
-                            <h3>Total Records</h3>
-                            <span class="metric-value" id="totalRecords">-</span>
-                        </div>
-                    </div>
-                    <div class="metric-card">
-                        <div class="metric-icon">🎯</div>
-                        <div class="metric-info">
-                            <h3>Total Positions</h3>
-                            <span class="metric-value" id="totalPositions">-</span>
-                        </div>
-                    </div>
-                    <div class="metric-card">
-                        <div class="metric-icon">📝</div>
-                        <div class="metric-info">
-                            <h3>Total CVs</h3>
-                            <span class="metric-value" id="totalCVs">-</span>
-                        </div>
-                    </div>
-                    <div class="metric-card">
-                        <div class="metric-icon">👤</div>
-                        <div class="metric-info">
-                            <h3>Active Recruiters</h3>
-                            <span class="metric-value" id="activeRecruiters">-</span>
-                        </div>
-                    </div>
-                    <div class="metric-card">
-                        <div class="metric-icon">🏢</div>
-                        <div class="metric-info">
-                            <h3>Active Clients</h3>
-                            <span class="metric-value" id="activeClients">-</span>
-                        </div>
-                    </div>
-                    <div class="metric-card">
-                        <div class="metric-icon">⏸️</div>
-                        <div class="metric-info">
-                            <h3>Positions On Hold</h3>
-                            <span class="metric-value" id="positionsOnHold">-</span>
-                        </div>
+                <!-- Metrics Overview -->
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="metric-icon">📊</div>
+                    <div class="metric-content">
+                        <div class="metric-number" id="totalRecords">0</div>
+                        <div class="metric-label">Total Records</div>
                     </div>
                 </div>
+
+                <div class="metric-card">
+                    <div class="metric-icon">💼</div>
+                    <div class="metric-content">
+                        <div class="metric-number" id="totalPositions">0</div>
+                        <div class="metric-label">Total Positions</div>
+                    </div>
+                </div>
+
+                <div class="metric-card">
+                    <div class="metric-icon">📋</div>
+                    <div class="metric-content">
+                        <div class="metric-number" id="totalCVs">0</div>
+                        <div class="metric-label">CVs Received</div>
+                    </div>
+                </div>
+
+                <div class="metric-card">
+                    <div class="metric-icon">📤</div>
+                    <div class="metric-content">
+                        <div class="metric-number" id="totalCVsShared">0</div>
+                        <div class="metric-label">CVs Shared</div>
+                    </div>
+                </div>
+
+                <div class="metric-card">
+                    <div class="metric-icon">⚡</div>
+                    <div class="metric-content">
+                        <div class="metric-number" id="avgDaysToFirstCV">0</div>
+                        <div class="metric-label">Avg Days to 1st CV</div>
+                    </div>
+                </div>
+
+                <div class="metric-card">
+                    <div class="metric-icon">👥</div>
+                    <div class="metric-content">
+                        <div class="metric-number" id="activeRecruiters">0</div>
+                        <div class="metric-label">Active Recruiters</div>
+                    </div>
+                </div>
+
+                <div class="metric-card">
+                    <div class="metric-icon">🏢</div>
+                    <div class="metric-content">
+                        <div class="metric-number" id="activeClients">0</div>
+                        <div class="metric-label">Active Clients</div>
+                    </div>
+                </div>
+
+                <div class="metric-card">
+                    <div class="metric-icon">⏸️</div>
+                    <div class="metric-content">
+                        <div class="metric-number" id="positionsOnHold">0</div>
+                        <div class="metric-label">Positions On Hold</div>
+                    </div>
+                </div>
+            </div>
             </div>
 
             <!-- Position Status Tab -->
@@ -178,6 +199,7 @@
                                 <th>No Of Position</th>
                                 <th>Requisition Date</th>
                                 <th>Number Of CVs</th>
+                                <th>CVs Shared Date</th>
                                 <th>On Hold Date</th>
                                 <th>Days</th>
                                 <th>Remarks</th>
@@ -185,7 +207,7 @@
                         </thead>
                         <tbody id="dataTableBody">
                             <tr>
-                                <td colspan="10" class="no-data">No data available. Please upload an Excel file to view data.</td>
+                                <td colspan="11" class="no-data">No data available. Please upload an Excel file to view data.</td>
                             </tr>
                         </tbody>
                     </table>

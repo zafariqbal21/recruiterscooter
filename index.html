@@ -91,13 +91,34 @@
 
                 <!-- Data Table -->
                 <div class="data-table-container">
-                    <h3>📋 Detailed Data</h3>
+                    <div class="table-controls">
+                        <h3>📋 Detailed Data</h3>
+                        <div class="table-actions">
+                            <input type="text" id="searchInput" placeholder="Search data..." class="search-input">
+                            <button id="exportBtn" class="secondary-btn">📊 Export CSV</button>
+                        </div>
+                    </div>
                     <div class="table-wrapper">
                         <table id="dataTable">
-                            <thead id="tableHeader">
-                                <!-- Headers will be populated by JavaScript -->
+                            <thead>
+                                <tr id="dataTableHeader">
+                                    <th>Recruiter</th>
+                                    <th>BDM</th>
+                                    <th>Client</th>
+                                    <th>Position</th>
+                                    <th>No. Positions</th>
+                                    <th>Req. Date</th>
+                                    <th>CVs Count</th>
+                                    <th>First CV Date</th>
+                                    <th>Last CV Date</th>
+                                    <th>CVs Shared</th>
+                                    <th>Days to 1st CV</th>
+                                    <th>On Hold Date</th>
+                                    <th>Total Days</th>
+                                    <th>Remarks</th>
+                                </tr>
                             </thead>
-                            <tbody id="tableBody">
+                            <tbody id="dataTableBody">
                                 <!-- Data will be populated by JavaScript -->
                             </tbody>
                         </table>

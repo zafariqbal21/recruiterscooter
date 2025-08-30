@@ -148,13 +148,24 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('activeRecruiters').textContent = summary.uniqueRecruiters || 0;
         document.getElementById('activeClients').textContent = summary.uniqueClients || 0;
         document.getElementById('positionsOnHold').textContent = summary.positionsOnHold || 0;
+        
+        // Add new CV sharing metrics if elements exist
+        const avgDaysToCV = document.getElementById('avgDaysToFirstCV');
+        if (avgDaysToCV) {
+            avgDaysToCV.textContent = summary.averageDaysToFirstCV || 0;
+        }
+        
+        const cvsSharedElement = document.getElementById('totalCVsShared');
+        if (cvsSharedElement) {
+            cvsSharedElement.textContent = summary.totalCVsShared || 0;
+        }
     }
 
     function populateDataTable(data) {
         const tableBody = document.getElementById('dataTableBody');
 
         if (!data || data.length === 0) {
-            tableBody.innerHTML = '<tr><td colspan="10" class="no-data">No data available</td></tr>';
+            tableBody.innerHTML = '<tr><td colspan="13" class="no-data">No data available</td></tr>';
             return;
         }
 
@@ -167,6 +178,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 <td>${record.noOfPosition || '-'}</td>
                 <td>${record.requisitionLoggedDate || '-'}</td>
                 <td>${record.numberOfCVs || '-'}</td>
+                <td>${record.firstCVSharedDate || '-'}</td>
+                <td>${record.lastCVSharedDate || '-'}</td>
+                <td>${record.cvsSharedCount || '-'}</td>
+                <td>${record.daysToFirstCV !== null ? record.daysToFirstCV : '-'}</td>
                 <td>${record.positionOnHoldDate || '-'}</td>
                 <td>${record.days || '-'}</td>
                 <td>${record.remarks || '-'}</td>
@@ -666,9 +681,137 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function renderTimelineCharts() {
-        // Monthly Position Logging Trend
-        const monthlyData = getMonthlyTrendData();
+        // Requisition vs CV Sharing Timeline Comparison
+        const comparisonData = getRequisitionVsCVTimelineData();
         renderChart('timelineChart', {
+            type: 'line',
+            data: {
+                labels: comparisonData.months,
+                datasets: [{
+                    label: 'Positions Logged',
+                    data: comparisonData.positions,
+                    borderColor: '#4299e1',
+                    backgroundColor: 'rgba(66, 153, 225, 0.1)',
+                    borderWidth: 3,
+                    pointBackgroundColor: '#4299e1',
+                    pointBorderColor: '#ffffff',
+                    pointBorderWidth: 2,
+                    pointRadius: 6,
+                    pointHoverRadius: 8,
+                    fill: false,
+                    tension: 0.4
+                }, {
+                    label: 'CVs Shared',
+                    data: comparisonData.cvsShared,
+                    borderColor: '#48bb78',
+                    backgroundColor: 'rgba(72, 187, 120, 0.1)',
+                    borderWidth: 3,
+                    pointBackgroundColor: '#48bb78',
+                    pointBorderColor: '#ffffff',
+                    pointBorderWidth: 2,
+                    pointRadius: 6,
+                    pointHoverRadius: 8,
+                    fill: false,
+                    tension: 0.4
+                }, {
+                    label: 'Average Days to First CV',
+                    data: comparisonData.avgDaysToCV,
+                    borderColor: '#ed8936',
+                    backgroundColor: 'rgba(237, 137, 54, 0.1)',
+                    borderWidth: 3,
+                    pointBackgroundColor: '#ed8936',
+                    pointBorderColor: '#ffffff',
+                    pointBorderWidth: 2,
+                    pointRadius: 6,
+                    pointHoverRadius: 8,
+                    fill: false,
+                    tension: 0.4,
+                    yAxisID: 'y1'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: {
+                    mode: 'index',
+                    intersect: false
+                },
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Requisition vs CV Sharing Timeline',
+                        color: '#e2e8f0',
+                        font: { size: 16, weight: 'bold' }
+                    },
+                    legend: {
+                        labels: { color: '#e2e8f0' }
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(45, 55, 72, 0.95)',
+                        titleColor: '#e2e8f0',
+                        bodyColor: '#e2e8f0',
+                        borderColor: '#4a5568',
+                        borderWidth: 1,
+                        callbacks: {
+                            label: function(context) {
+                                if (context.datasetIndex === 2) {
+                                    return `${context.dataset.label}: ${context.parsed.y.toFixed(1)} days`;
+                                }
+                                return `${context.dataset.label}: ${context.parsed.y}`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        ticks: { color: '#e2e8f0' },
+                        grid: { color: 'rgba(74, 85, 104, 0.3)' }
+                    },
+                    y: {
+                        type: 'linear',
+                        display: true,
+                        position: 'left',
+                        beginAtZero: true,
+                        ticks: { 
+                            color: '#e2e8f0',
+                            stepSize: 1
+                        },
+                        grid: { color: 'rgba(74, 85, 104, 0.3)' },
+                        title: {
+                            display: true,
+                            text: 'Count',
+                            color: '#e2e8f0'
+                        }
+                    },
+                    y1: {
+                        type: 'linear',
+                        display: true,
+                        position: 'right',
+                        beginAtZero: true,
+                        ticks: { 
+                            color: '#e2e8f0',
+                            callback: function(value) {
+                                return value + ' days';
+                            }
+                        },
+                        grid: { drawOnChartArea: false },
+                        title: {
+                            display: true,
+                            text: 'Days to First CV',
+                            color: '#e2e8f0'
+                        }
+                    }
+                },
+                animation: {
+                    duration: 1500,
+                    easing: 'easeOutCubic'
+                }
+            }
+        });
+
+        // Monthly Position Logging Trend (moved to second chart)
+        const monthlyData = getMonthlyTrendData();
+        renderChart('monthlyCVChart', {
             type: 'line',
             data: {
                 labels: monthlyData.months,
@@ -1146,6 +1289,116 @@ document.addEventListener('DOMContentLoaded', function() {
                 const stats = monthlyStats[month];
                 return stats && stats.positions > 0 ? (stats.submissions / stats.positions) * 10 : 0; // Normalize for display
             })
+        };
+    }
+
+    function getRequisitionVsCVTimelineData() {
+        const data = currentData.data || [];
+        const monthlyStats = {};
+
+        data.forEach(record => {
+            // Process by requisition date
+            if (record.requisitionLoggedDate) {
+                const reqDate = new Date(record.requisitionLoggedDate);
+                const monthKey = reqDate.toLocaleDateString('en-US', { year: 'numeric', month: 'short' });
+
+                if (!monthlyStats[monthKey]) {
+                    monthlyStats[monthKey] = { 
+                        positions: 0, 
+                        cvsShared: 0, 
+                        daysToCV: [], 
+                        totalDaysToCV: 0, 
+                        recordsWithCV: 0 
+                    };
+                }
+                monthlyStats[monthKey].positions += record.noOfPosition || 1;
+            }
+
+            // Process CV shared dates
+            if (record.cvsSharedDates && record.cvsSharedDates.length > 0) {
+                record.cvsSharedDates.forEach(cvDate => {
+                    const date = new Date(cvDate);
+                    const monthKey = date.toLocaleDateString('en-US', { year: 'numeric', month: 'short' });
+
+                    if (!monthlyStats[monthKey]) {
+                        monthlyStats[monthKey] = { 
+                            positions: 0, 
+                            cvsShared: 0, 
+                            daysToCV: [], 
+                            totalDaysToCV: 0, 
+                            recordsWithCV: 0 
+                        };
+                    }
+                    monthlyStats[monthKey].cvsShared += 1;
+                });
+            }
+
+            // Process days to first CV
+            if (record.daysToFirstCV !== null && record.requisitionLoggedDate) {
+                const reqDate = new Date(record.requisitionLoggedDate);
+                const monthKey = reqDate.toLocaleDateString('en-US', { year: 'numeric', month: 'short' });
+
+                if (monthlyStats[monthKey]) {
+                    monthlyStats[monthKey].totalDaysToCV += record.daysToFirstCV;
+                    monthlyStats[monthKey].recordsWithCV += 1;
+                }
+            }
+        });
+
+        const sortedMonths = Object.keys(monthlyStats).sort((a, b) => new Date(a) - new Date(b));
+        const recentMonths = sortedMonths.slice(-12);
+
+        return {
+            months: recentMonths,
+            positions: recentMonths.map(month => monthlyStats[month]?.positions || 0),
+            cvsShared: recentMonths.map(month => monthlyStats[month]?.cvsShared || 0),
+            avgDaysToCV: recentMonths.map(month => {
+                const stats = monthlyStats[month];
+                return stats && stats.recordsWithCV > 0 
+                    ? Math.round(stats.totalDaysToCV / stats.recordsWithCV)
+                    : 0;
+            })
+        };
+    }
+
+    function getCVSharingEfficiencyData() {
+        const data = currentData.data || [];
+        const recruiterStats = {};
+
+        data.forEach(record => {
+            const recruiter = record.recruiter || 'Unknown';
+            if (!recruiterStats[recruiter]) {
+                recruiterStats[recruiter] = { 
+                    positions: 0, 
+                    cvsShared: 0, 
+                    totalDaysToCV: 0, 
+                    recordsWithCV: 0 
+                };
+            }
+            
+            recruiterStats[recruiter].positions += record.noOfPosition || 1;
+            recruiterStats[recruiter].cvsShared += record.cvsSharedCount || 0;
+            
+            if (record.daysToFirstCV !== null) {
+                recruiterStats[recruiter].totalDaysToCV += record.daysToFirstCV;
+                recruiterStats[recruiter].recordsWithCV += 1;
+            }
+        });
+
+        const sorted = Object.entries(recruiterStats)
+            .filter(([,stats]) => stats.positions > 0)
+            .map(([recruiter, stats]) => [
+                recruiter,
+                stats.cvsShared,
+                stats.recordsWithCV > 0 ? Math.round(stats.totalDaysToCV / stats.recordsWithCV) : 0
+            ])
+            .sort(([,,,a], [,,,b]) => a - b) // Sort by average days (ascending = better)
+            .slice(0, 8);
+
+        return {
+            labels: sorted.map(([recruiter]) => recruiter),
+            cvsShared: sorted.map(([,cvs]) => cvs),
+            avgDaysToCV: sorted.map(([,,days]) => days)
         };
     }
 

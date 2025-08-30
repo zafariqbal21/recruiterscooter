@@ -87,7 +87,8 @@ function parseRecruitmentData(filePath) {
       'bdm': ['bdm', 'business development manager'],
       'clientName': ['client name', 'client', 'company name'],
       'days': ['days', 'duration', 'days taken'],
-      'remarks': ['remarks', 'comments', 'notes']
+      'remarks': ['remarks', 'comments', 'notes'],
+      'cvsSharedDate': ['cvs shared date', 'cv shared date', 'shared date', 'cvs date', 'cv date']
     };
     
     // Find column indices by matching header names (case-insensitive)
@@ -136,6 +137,89 @@ function parseRecruitmentData(filePath) {
       return null;
     }
     
+    // Helper function to parse multiple CVs shared dates from a single cell
+    function parseCVsSharedDates(cellValue) {
+      if (!cellValue) return { dates: [], firstDate: null, lastDate: null, count: 0 };
+      
+      const dateStr = String(cellValue).trim();
+      if (dateStr.toLowerCase() === 'na' || dateStr === '') {
+        return { dates: [], firstDate: null, lastDate: null, count: 0 };
+      }
+      
+      // Multiple date patterns to match
+      const datePatterns = [
+        // DD-MMM-YY format (e.g., 11-Mar-2025, 18-Mar-2025)
+        /(\d{1,2}-[A-Za-z]{3}-\d{2,4})/g,
+        // YYYY-MM-DD format
+        /(\d{4}-\d{2}-\d{2})/g,
+        // DD/MM/YYYY format
+        /(\d{1,2}\/\d{1,2}\/\d{4})/g,
+        // DD.MM.YY format
+        /(\d{1,2}\.\d{1,2}\.\d{2,4})/g
+      ];
+      
+      const extractedDates = [];
+      const validDates = [];
+      
+      // Try each pattern
+      for (const pattern of datePatterns) {
+        const matches = dateStr.match(pattern);
+        if (matches) {
+          extractedDates.push(...matches);
+        }
+      }
+      
+      // Convert extracted strings to valid dates
+      for (const dateStr of extractedDates) {
+        let parsedDate = null;
+        
+        // Handle DD-MMM-YY format
+        if (dateStr.match(/\d{1,2}-[A-Za-z]{3}-\d{2,4}/)) {
+          const parts = dateStr.split('-');
+          if (parts.length === 3) {
+            const day = parseInt(parts[0]);
+            const monthName = parts[1];
+            let year = parseInt(parts[2]);
+            
+            // Convert 2-digit year to 4-digit
+            if (year < 100) {
+              year += year < 50 ? 2000 : 1900;
+            }
+            
+            const monthMap = {
+              'jan': 0, 'feb': 1, 'mar': 2, 'apr': 3, 'may': 4, 'jun': 5,
+              'jul': 6, 'aug': 7, 'sep': 8, 'oct': 9, 'nov': 10, 'dec': 11
+            };
+            
+            const month = monthMap[monthName.toLowerCase()];
+            if (month !== undefined) {
+              parsedDate = new Date(year, month, day);
+            }
+          }
+        } else {
+          // Try standard Date parsing for other formats
+          parsedDate = new Date(dateStr);
+        }
+        
+        // Validate the date
+        if (parsedDate && !isNaN(parsedDate.getTime()) && parsedDate.getFullYear() > 1900) {
+          validDates.push(parsedDate);
+        }
+      }
+      
+      // Remove duplicates and sort
+      const uniqueDates = [...new Set(validDates.map(d => d.getTime()))]
+        .map(time => new Date(time))
+        .sort((a, b) => a - b);
+      
+      return {
+        dates: uniqueDates.map(d => d.toISOString().split('T')[0]),
+        firstDate: uniqueDates.length > 0 ? uniqueDates[0].toISOString().split('T')[0] : null,
+        lastDate: uniqueDates.length > 0 ? uniqueDates[uniqueDates.length - 1].toISOString().split('T')[0] : null,
+        count: uniqueDates.length
+      };
+    }
+    
     // Helper function to safely get cell value
     function getCellValue(value, type = 'string') {
       if (value === undefined || value === null || value === '') {
@@ -155,6 +239,9 @@ function parseRecruitmentData(filePath) {
     
     // Parse data rows using dynamic header mapping
     const parsedData = dataRows.map((row, index) => {
+      // Parse CVs shared dates
+      const cvsSharedInfo = parseCVsSharedDates(row[headerMapping.cvsSharedDate]);
+      
       const record = {
         rowNumber: index + 2, // +2 because we skip header and arrays are 0-indexed
         recruiter: getCellValue(row[headerMapping.recruiter]),
@@ -166,8 +253,21 @@ function parseRecruitmentData(filePath) {
         numberOfCVs: getCellValue(row[headerMapping.numberOfCVs], 'number'),
         positionOnHoldDate: getCellValue(row[headerMapping.positionOnHoldDate], 'date'),
         days: getCellValue(row[headerMapping.days], 'number'),
-        remarks: getCellValue(row[headerMapping.remarks])
+        remarks: getCellValue(row[headerMapping.remarks]),
+        cvsSharedDates: cvsSharedInfo.dates,
+        firstCVSharedDate: cvsSharedInfo.firstDate,
+        lastCVSharedDate: cvsSharedInfo.lastDate,
+        cvsSharedCount: cvsSharedInfo.count
       };
+      
+      // Calculate days from requisition to first CV shared
+      if (record.requisitionLoggedDate && record.firstCVSharedDate) {
+        const reqDate = new Date(record.requisitionLoggedDate);
+        const firstCVDate = new Date(record.firstCVSharedDate);
+        record.daysToFirstCV = Math.floor((firstCVDate - reqDate) / (1000 * 60 * 60 * 24));
+      } else {
+        record.daysToFirstCV = null;
+      }
       
       return record;
     }).filter(record => {
@@ -194,6 +294,16 @@ function parseRecruitmentData(filePath) {
       averageDays: parsedData.filter(r => r.days !== null).length > 0 
         ? Math.round(parsedData.reduce((sum, r) => sum + (r.days || 0), 0) / 
           parsedData.filter(r => r.days !== null).length) 
+        : 0,
+      recordsWithCVsShared: parsedData.filter(r => r.cvsSharedCount > 0).length,
+      totalCVsShared: parsedData.reduce((sum, r) => sum + (r.cvsSharedCount || 0), 0),
+      averageDaysToFirstCV: parsedData.filter(r => r.daysToFirstCV !== null).length > 0
+        ? Math.round(parsedData.reduce((sum, r) => sum + (r.daysToFirstCV || 0), 0) / 
+          parsedData.filter(r => r.daysToFirstCV !== null).length)
+        : 0,
+      averageCVsPerPosition: parsedData.filter(r => r.cvsSharedCount > 0).length > 0
+        ? Math.round((parsedData.reduce((sum, r) => sum + (r.cvsSharedCount || 0), 0) /
+          parsedData.filter(r => r.cvsSharedCount > 0).length) * 10) / 10
         : 0
     };
     
