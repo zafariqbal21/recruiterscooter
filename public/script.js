@@ -1,12 +1,16 @@
-
 document.addEventListener('DOMContentLoaded', function() {
     const uploadForm = document.getElementById('uploadForm');
     const uploadStatus = document.getElementById('uploadStatus');
     const uploadResults = document.getElementById('uploadResults');
     const loadingSpinner = document.getElementById('loadingSpinner');
-    
+
     let currentData = null;
     let charts = {};
+
+    // API Configuration - Use external service for file processing
+    const API_BASE_URL = window.location.origin;
+    const EXTERNAL_API_URL = 'https://your-replit-app.replit.app'; // Your Replit API server
+
 
     // Tab Navigation
     const tabBtns = document.querySelectorAll('.tab-btn');
@@ -15,15 +19,15 @@ document.addEventListener('DOMContentLoaded', function() {
     tabBtns.forEach(btn => {
         btn.addEventListener('click', () => {
             const targetTab = btn.getAttribute('data-tab');
-            
+
             // Update active tab button
             tabBtns.forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
-            
+
             // Update active tab pane
             tabPanes.forEach(pane => pane.classList.remove('active'));
             document.getElementById(targetTab).classList.add('active');
-            
+
             // Render charts for the active tab
             if (currentData) {
                 renderChartsForTab(targetTab);
@@ -35,7 +39,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const fileInput = document.getElementById('recruitmentData');
     const fileLabel = document.querySelector('label[for="recruitmentData"]');
     const originalLabelContent = fileLabel.innerHTML;
-    
+
     fileInput.addEventListener('change', function() {
         const file = this.files[0];
         if (file) {
@@ -54,21 +58,21 @@ document.addEventListener('DOMContentLoaded', function() {
     // File Upload Handler
     uploadForm.addEventListener('submit', async function(e) {
         e.preventDefault();
-        
+
         const formData = new FormData();
         const fileInput = document.getElementById('recruitmentData');
-        
+
         if (!fileInput.files[0]) {
             alert('Please select a file');
             return;
         }
 
         formData.append('recruitmentData', fileInput.files[0]);
-        
+
         showLoadingSpinner(true);
 
         try {
-            const response = await fetch('/api/upload', {
+            const response = await fetch(`${EXTERNAL_API_URL}/api/process-excel`, {
                 method: 'POST',
                 body: formData
             });
@@ -87,7 +91,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 updateMetrics(result.summary);
                 populateDataTable(result.data);
                 renderChartsForTab('overview');
-                
+
                 // Auto-minimize upload section after successful upload
                 minimizeUploadSection();
             } else {
@@ -118,7 +122,7 @@ document.addEventListener('DOMContentLoaded', function() {
             <p><strong>Processed at:</strong> ${new Date(result.processedAt || Date.now()).toLocaleString()}</p>
         `;
         uploadStatus.style.display = 'block';
-        
+
         // Auto-hide success message after 10 seconds
         setTimeout(() => {
             if (uploadStatus && uploadStatus.style.display === 'block' && !uploadResults.classList.contains('error')) {
@@ -138,7 +142,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function updateMetrics(summary) {
         if (!summary) return;
-        
+
         document.getElementById('totalRecords').textContent = summary.totalRecords || 0;
         document.getElementById('totalPositions').textContent = summary.totalPositions || 0;
         document.getElementById('totalCVs').textContent = summary.totalCVs || 0;
@@ -149,7 +153,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function populateDataTable(data) {
         const tableBody = document.getElementById('dataTableBody');
-        
+
         if (!data || data.length === 0) {
             tableBody.innerHTML = '<tr><td colspan="10" class="no-data">No data available</td></tr>';
             return;
@@ -913,7 +917,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const data = currentData.data || [];
         const active = data.filter(r => !r.positionOnHoldDate).length;
         const onHold = data.filter(r => r.positionOnHoldDate).length;
-        
+
         return {
             labels: ['Active', 'On Hold'],
             values: [active, onHold]
@@ -923,7 +927,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function getPositionsByClientData() {
         const data = currentData.data || [];
         const clientCounts = {};
-        
+
         data.forEach(record => {
             const client = record.clientName || 'Unknown';
             clientCounts[client] = (clientCounts[client] || 0) + (record.noOfPosition || 1);
@@ -942,7 +946,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function getCVsByRecruiterData() {
         const data = currentData.data || [];
         const recruiterCVs = {};
-        
+
         data.forEach(record => {
             const recruiter = record.recruiter || 'Unknown';
             recruiterCVs[recruiter] = (recruiterCVs[recruiter] || 0) + (record.numberOfCVs || 0);
@@ -961,7 +965,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function getPositionsByRecruiterData() {
         const data = currentData.data || [];
         const recruiterPositions = {};
-        
+
         data.forEach(record => {
             const recruiter = record.recruiter || 'Unknown';
             recruiterPositions[recruiter] = (recruiterPositions[recruiter] || 0) + (record.noOfPosition || 1);
@@ -980,7 +984,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function getClientActivityData() {
         const data = currentData.data || [];
         const clientStats = {};
-        
+
         data.forEach(record => {
             const client = record.clientName || 'Unknown';
             if (!clientStats[client]) {
@@ -1004,7 +1008,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function getAverageDaysByClientData() {
         const data = currentData.data || [];
         const clientDays = {};
-        
+
         data.forEach(record => {
             const client = record.clientName || 'Unknown';
             if (record.days !== null && record.days !== undefined) {
@@ -1030,7 +1034,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function getRecruiterEfficiencyData() {
         const data = currentData.data || [];
         const recruiterStats = {};
-        
+
         data.forEach(record => {
             const recruiter = record.recruiter || 'Unknown';
             if (!recruiterStats[recruiter]) {
@@ -1060,7 +1064,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function getClientResponseTimeData() {
         const data = currentData.data || [];
         const clientDays = {};
-        
+
         data.forEach(record => {
             const client = record.clientName || 'Unknown';
             if (record.days !== null && record.days !== undefined) {
@@ -1086,18 +1090,18 @@ document.addEventListener('DOMContentLoaded', function() {
     function getMonthlyTrendData() {
         const data = currentData.data || [];
         const monthlyStats = {};
-        
+
         // Process data by month
         data.forEach(record => {
             if (record.requisitionLoggedDate) {
                 const date = new Date(record.requisitionLoggedDate);
                 const monthKey = date.toLocaleDateString('en-US', { year: 'numeric', month: 'short' });
-                
+
                 if (!monthlyStats[monthKey]) {
                     monthlyStats[monthKey] = { positions: 0, filled: 0 };
                 }
                 monthlyStats[monthKey].positions += record.noOfPosition || 1;
-                
+
                 // Estimate filled positions (positions without hold date and reasonable days)
                 if (!record.positionOnHoldDate && record.days && record.days < 60) {
                     monthlyStats[monthKey].filled += Math.round((record.noOfPosition || 1) * 0.7);
@@ -1119,12 +1123,12 @@ document.addEventListener('DOMContentLoaded', function() {
     function getMonthlyCVTrendData() {
         const data = currentData.data || [];
         const monthlyStats = {};
-        
+
         data.forEach(record => {
             if (record.requisitionLoggedDate) {
                 const date = new Date(record.requisitionLoggedDate);
                 const monthKey = date.toLocaleDateString('en-US', { year: 'numeric', month: 'short' });
-                
+
                 if (!monthlyStats[monthKey]) {
                     monthlyStats[monthKey] = { submissions: 0, positions: 0 };
                 }
@@ -1152,7 +1156,7 @@ document.addEventListener('DOMContentLoaded', function() {
         searchInput.addEventListener('input', function() {
             const searchTerm = this.value.toLowerCase();
             const rows = document.querySelectorAll('#dataTableBody tr');
-            
+
             rows.forEach(row => {
                 const text = row.textContent.toLowerCase();
                 row.style.display = text.includes(searchTerm) ? '' : 'none';
@@ -1168,7 +1172,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 alert('No data to export');
                 return;
             }
-            
+
             const csv = convertToCSV(currentData.data);
             downloadCSV(csv, 'recruitment_data.csv');
         });
@@ -1177,7 +1181,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function convertToCSV(data) {
         const headers = ['Recruiter', 'BDM', 'Client Name', 'Position Name', 'No Of Position', 
                         'Requisition Date', 'Number Of CVs', 'On Hold Date', 'Days', 'Remarks'];
-        
+
         const csvContent = [
             headers.join(','),
             ...data.map(row => [
@@ -1193,7 +1197,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 row.remarks || ''
             ].map(field => `"${String(field).replace(/"/g, '""')}"`).join(','))
         ].join('\n');
-        
+
         return csvContent;
     }
 
@@ -1213,20 +1217,20 @@ document.addEventListener('DOMContentLoaded', function() {
     function minimizeUploadSection() {
         const uploadSection = document.querySelector('.upload-section');
         const uploadForm = document.getElementById('uploadForm');
-        
+
         if (uploadSection && uploadForm) {
             // Add minimized class for styling
             uploadSection.classList.add('minimized');
-            
+
             // Hide the form content
             uploadForm.style.display = 'none';
-            
+
             // Remove expanded header if it exists
             const expandedHeader = uploadSection.querySelector('.expanded-header');
             if (expandedHeader) {
                 expandedHeader.remove();
             }
-            
+
             // Create or update the minimized header
             let minimizedHeader = uploadSection.querySelector('.minimized-header');
             if (!minimizedHeader) {
@@ -1234,7 +1238,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 minimizedHeader.className = 'minimized-header';
                 uploadSection.insertBefore(minimizedHeader, uploadForm);
             }
-            
+
             const fileName = currentData?.filename || 'File uploaded';
             minimizedHeader.innerHTML = `
                 <div class="minimized-content">
@@ -1250,17 +1254,17 @@ document.addEventListener('DOMContentLoaded', function() {
     window.expandUploadSection = function() {
         const uploadSection = document.querySelector('.upload-section');
         const uploadForm = document.getElementById('uploadForm');
-        
+
         if (uploadSection && uploadForm) {
             uploadSection.classList.remove('minimized');
             uploadForm.style.display = 'block';
-            
+
             // Remove minimized header
             const minimizedHeader = uploadSection.querySelector('.minimized-header');
             if (minimizedHeader) {
                 minimizedHeader.remove();
             }
-            
+
             // Add "Keep Current File" button in the same position
             addKeepCurrentFileButton();
         }
@@ -1270,12 +1274,12 @@ document.addEventListener('DOMContentLoaded', function() {
     function addKeepCurrentFileButton() {
         const uploadSection = document.querySelector('.upload-section');
         let keepFileBtn = document.getElementById('keepCurrentFileBtn');
-        
+
         // Remove existing button if it exists
         if (keepFileBtn) {
             keepFileBtn.remove();
         }
-        
+
         // Only add if we have current data
         if (currentData) {
             // Create a header similar to minimized header but for expanded state
@@ -1285,7 +1289,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 expandedHeader.className = 'expanded-header';
                 uploadSection.insertBefore(expandedHeader, uploadSection.querySelector('h2').nextSibling);
             }
-            
+
             const fileName = currentData?.filename || 'File uploaded';
             expandedHeader.innerHTML = `
                 <div class="minimized-content">
@@ -1329,7 +1333,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Render placeholder for all chart canvases
         const chartIds = ['positionStatusChart', 'positionsByClientChart', 'recruiterPerformanceChart', 
                          'recruiterPositionsChart', 'clientActivityChart', 'clientDaysChart'];
-        
+
         chartIds.forEach(id => {
             const canvas = document.getElementById(id);
             if (canvas) {
