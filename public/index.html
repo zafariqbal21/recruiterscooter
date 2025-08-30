@@ -41,6 +41,7 @@
             <button class="tab-btn active" data-tab="overview">📊 Overview</button>
             <button class="tab-btn" data-tab="positions">🎯 Position Status</button>
             <button class="tab-btn" data-tab="recruiters">👥 Recruiter Performance</button>
+            <button class="tab-btn" data-tab="bdm">💼 BDM Analytics</button>
             <button class="tab-btn" data-tab="clients">🏢 Client Analytics</button>
             <button class="tab-btn" data-tab="timeline">📈 Timeline Trends</button>
             <button class="tab-btn" data-tab="data">📋 Raw Data</button>
@@ -150,6 +151,22 @@
                 </div>
             </div>
 
+            <!-- BDM Analytics Tab -->
+            <div id="bdm" class="tab-pane">
+                <div class="chart-section">
+                    <h3>BDM Performance Overview</h3>
+                    <div class="chart-container">
+                        <canvas id="bdmPerformanceChart"></canvas>
+                    </div>
+                </div>
+                <div class="chart-section">
+                    <h3>BDM CV Sharing Efficiency</h3>
+                    <div class="chart-container">
+                        <canvas id="bdmEfficiencyChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
             <!-- Client Analytics Tab -->
             <div id="clients" class="tab-pane">
                 <div class="chart-section">
@@ -199,7 +216,10 @@
                                 <th>No Of Position</th>
                                 <th>Requisition Date</th>
                                 <th>Number Of CVs</th>
-                                <th>CVs Shared Date</th>
+                                <th>First CV Shared</th>
+                                <th>Last CV Shared</th>
+                                <th>CVs Shared Count</th>
+                                <th>Days to First CV</th>
                                 <th>On Hold Date</th>
                                 <th>Days</th>
                                 <th>Remarks</th>

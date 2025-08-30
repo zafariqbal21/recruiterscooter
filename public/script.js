@@ -199,6 +199,9 @@ document.addEventListener('DOMContentLoaded', function() {
             case 'recruiters':
                 renderRecruiterCharts();
                 break;
+            case 'bdm':
+                renderBDMCharts();
+                break;
             case 'clients':
                 renderClientCharts();
                 break;
@@ -507,6 +510,215 @@ document.addEventListener('DOMContentLoaded', function() {
                         title: {
                             display: true,
                             text: 'CV-to-Position Ratio',
+                            color: '#e2e8f0'
+                        }
+                    }
+                },
+                animation: {
+                    duration: 1400,
+                    easing: 'easeOutCubic'
+                }
+            }
+        });
+    }
+
+    function renderBDMCharts() {
+        // BDM Performance Overview (Positions and CVs)
+        const bdmData = getBDMPerformanceData();
+        renderChart('bdmPerformanceChart', {
+            type: 'bar',
+            data: {
+                labels: bdmData.labels,
+                datasets: [{
+                    label: 'Positions Managed',
+                    data: bdmData.positions,
+                    backgroundColor: '#9f7aea',
+                    borderColor: '#805ad5',
+                    borderWidth: 1,
+                    borderRadius: 4,
+                    yAxisID: 'y'
+                }, {
+                    label: 'Total CVs Shared',
+                    data: bdmData.cvsShared,
+                    backgroundColor: '#38b2ac',
+                    borderColor: '#319795',
+                    borderWidth: 1,
+                    borderRadius: 4,
+                    yAxisID: 'y'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'BDM Performance - Positions & CVs',
+                        color: '#e2e8f0',
+                        font: { size: 16, weight: 'bold' }
+                    },
+                    legend: {
+                        labels: { color: '#e2e8f0' }
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(45, 55, 72, 0.95)',
+                        titleColor: '#e2e8f0',
+                        bodyColor: '#e2e8f0',
+                        borderColor: '#4a5568',
+                        borderWidth: 1,
+                        callbacks: {
+                            label: function(context) {
+                                return `${context.dataset.label}: ${context.parsed.y}`;
+                            },
+                            afterLabel: function(context) {
+                                if (context.datasetIndex === 0) {
+                                    const cvs = bdmData.cvsShared[context.dataIndex];
+                                    const ratio = context.parsed.y > 0 ? (cvs / context.parsed.y).toFixed(1) : 0;
+                                    return `CV-to-Position Ratio: ${ratio}:1`;
+                                }
+                                return '';
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        ticks: { 
+                            color: '#e2e8f0',
+                            maxRotation: 45,
+                            minRotation: 0
+                        },
+                        grid: { color: 'rgba(74, 85, 104, 0.3)' }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        ticks: { 
+                            color: '#e2e8f0',
+                            stepSize: 1
+                        },
+                        grid: { color: 'rgba(74, 85, 104, 0.3)' }
+                    }
+                },
+                animation: {
+                    duration: 1200,
+                    easing: 'easeOutQuart'
+                }
+            }
+        });
+
+        // BDM CV Sharing Efficiency with Timeline
+        const efficiencyData = getBDMEfficiencyData();
+        renderChart('bdmEfficiencyChart', {
+            type: 'bar',
+            data: {
+                labels: efficiencyData.labels,
+                datasets: [{
+                    label: 'CVs Shared Count',
+                    data: efficiencyData.cvsShared,
+                    backgroundColor: '#48bb78',
+                    borderColor: '#2f855a',
+                    borderWidth: 1,
+                    borderRadius: 4,
+                    yAxisID: 'y'
+                }, {
+                    label: 'Avg Days to First CV',
+                    data: efficiencyData.avgDaysToCV,
+                    type: 'line',
+                    borderColor: '#ed8936',
+                    backgroundColor: 'rgba(237, 137, 54, 0.1)',
+                    borderWidth: 3,
+                    pointBackgroundColor: '#ed8936',
+                    pointBorderColor: '#ffffff',
+                    pointBorderWidth: 2,
+                    pointRadius: 6,
+                    yAxisID: 'y1'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: {
+                    mode: 'index',
+                    intersect: false
+                },
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'BDM CV Sharing Efficiency & Speed',
+                        color: '#e2e8f0',
+                        font: { size: 16, weight: 'bold' }
+                    },
+                    legend: {
+                        labels: { color: '#e2e8f0' }
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(45, 55, 72, 0.95)',
+                        titleColor: '#e2e8f0',
+                        bodyColor: '#e2e8f0',
+                        borderColor: '#4a5568',
+                        borderWidth: 1,
+                        callbacks: {
+                            label: function(context) {
+                                if (context.datasetIndex === 0) {
+                                    return `CVs Shared: ${context.parsed.y}`;
+                                } else {
+                                    return `Avg Days to First CV: ${context.parsed.y.toFixed(1)} days`;
+                                }
+                            },
+                            afterLabel: function(context) {
+                                if (context.datasetIndex === 1) {
+                                    const value = context.parsed.y;
+                                    let status = 'Excellent';
+                                    if (value > 20) status = 'Needs Improvement';
+                                    else if (value > 10) status = 'Good';
+                                    else if (value > 5) status = 'Very Good';
+                                    return `Performance: ${status}`;
+                                }
+                                return '';
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        ticks: { 
+                            color: '#e2e8f0',
+                            maxRotation: 45,
+                            minRotation: 0
+                        },
+                        grid: { color: 'rgba(74, 85, 104, 0.3)' }
+                    },
+                    y: {
+                        type: 'linear',
+                        display: true,
+                        position: 'left',
+                        beginAtZero: true,
+                        ticks: { 
+                            color: '#e2e8f0',
+                            stepSize: 1
+                        },
+                        grid: { color: 'rgba(74, 85, 104, 0.3)' },
+                        title: {
+                            display: true,
+                            text: 'CVs Shared',
+                            color: '#e2e8f0'
+                        }
+                    },
+                    y1: {
+                        type: 'linear',
+                        display: true,
+                        position: 'right',
+                        beginAtZero: true,
+                        ticks: { 
+                            color: '#e2e8f0',
+                            callback: function(value) {
+                                return value + ' days';
+                            }
+                        },
+                        grid: { drawOnChartArea: false },
+                        title: {
+                            display: true,
+                            text: 'Days to First CV',
                             color: '#e2e8f0'
                         }
                     }
@@ -1399,6 +1611,87 @@ document.addEventListener('DOMContentLoaded', function() {
             labels: sorted.map(([recruiter]) => recruiter),
             cvsShared: sorted.map(([,cvs]) => cvs),
             avgDaysToCV: sorted.map(([,,days]) => days)
+        };
+    }
+
+    function getBDMPerformanceData() {
+        const data = currentData.data || [];
+        const bdmStats = {};
+
+        data.forEach(record => {
+            const bdm = record.bdm || 'Unknown';
+            if (!bdmStats[bdm]) {
+                bdmStats[bdm] = { 
+                    positions: 0, 
+                    cvsShared: 0, 
+                    recruiters: new Set(),
+                    clients: new Set()
+                };
+            }
+            
+            bdmStats[bdm].positions += record.noOfPosition || 1;
+            bdmStats[bdm].cvsShared += record.cvsSharedCount || 0;
+            
+            if (record.recruiter) bdmStats[bdm].recruiters.add(record.recruiter);
+            if (record.clientName) bdmStats[bdm].clients.add(record.clientName);
+        });
+
+        const sorted = Object.entries(bdmStats)
+            .filter(([bdm]) => bdm !== 'Unknown')
+            .sort(([,a], [,b]) => b.positions - a.positions)
+            .slice(0, 10);
+
+        return {
+            labels: sorted.map(([bdm]) => bdm),
+            positions: sorted.map(([,stats]) => stats.positions),
+            cvsShared: sorted.map(([,stats]) => stats.cvsShared),
+            recruiters: sorted.map(([,stats]) => stats.recruiters.size),
+            clients: sorted.map(([,stats]) => stats.clients.size)
+        };
+    }
+
+    function getBDMEfficiencyData() {
+        const data = currentData.data || [];
+        const bdmStats = {};
+
+        data.forEach(record => {
+            const bdm = record.bdm || 'Unknown';
+            if (!bdmStats[bdm]) {
+                bdmStats[bdm] = { 
+                    positions: 0, 
+                    cvsShared: 0, 
+                    totalDaysToCV: 0, 
+                    recordsWithCV: 0,
+                    totalCVsReceived: 0
+                };
+            }
+            
+            bdmStats[bdm].positions += record.noOfPosition || 1;
+            bdmStats[bdm].cvsShared += record.cvsSharedCount || 0;
+            bdmStats[bdm].totalCVsReceived += record.numberOfCVs || 0;
+            
+            if (record.daysToFirstCV !== null) {
+                bdmStats[bdm].totalDaysToCV += record.daysToFirstCV;
+                bdmStats[bdm].recordsWithCV += 1;
+            }
+        });
+
+        const sorted = Object.entries(bdmStats)
+            .filter(([bdm]) => bdm !== 'Unknown' && bdm !== null)
+            .map(([bdm, stats]) => [
+                bdm,
+                stats.cvsShared,
+                stats.recordsWithCV > 0 ? Math.round(stats.totalDaysToCV / stats.recordsWithCV) : 0,
+                stats.totalCVsReceived
+            ])
+            .sort(([,,,a], [,,,b]) => b - a) // Sort by total CVs received (descending)
+            .slice(0, 8);
+
+        return {
+            labels: sorted.map(([bdm]) => bdm),
+            cvsShared: sorted.map(([,shared]) => shared),
+            avgDaysToCV: sorted.map(([,,days]) => days),
+            totalCVs: sorted.map(([,,,total]) => total)
         };
     }
 
