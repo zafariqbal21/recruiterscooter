@@ -1221,6 +1221,12 @@ document.addEventListener('DOMContentLoaded', function() {
             // Hide the form content
             uploadForm.style.display = 'none';
             
+            // Remove expanded header if it exists
+            const expandedHeader = uploadSection.querySelector('.expanded-header');
+            if (expandedHeader) {
+                expandedHeader.remove();
+            }
+            
             // Create or update the minimized header
             let minimizedHeader = uploadSection.querySelector('.minimized-header');
             if (!minimizedHeader) {
@@ -1255,14 +1261,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 minimizedHeader.remove();
             }
             
-            // Add "Keep Current File" button to the upload form
+            // Add "Keep Current File" button in the same position
             addKeepCurrentFileButton();
         }
     };
 
     // Add Keep Current File button when user expands upload section
     function addKeepCurrentFileButton() {
-        const uploadForm = document.getElementById('uploadForm');
+        const uploadSection = document.querySelector('.upload-section');
         let keepFileBtn = document.getElementById('keepCurrentFileBtn');
         
         // Remove existing button if it exists
@@ -1272,28 +1278,22 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Only add if we have current data
         if (currentData) {
-            keepFileBtn = document.createElement('button');
-            keepFileBtn.id = 'keepCurrentFileBtn';
-            keepFileBtn.type = 'button';
-            keepFileBtn.className = 'btn-secondary keep-file-btn';
-            keepFileBtn.innerHTML = '↩️ Keep Current File';
-            keepFileBtn.onclick = function() {
-                minimizeUploadSection();
-                // Reset file input
-                const fileInput = document.getElementById('recruitmentData');
-                const fileLabel = document.querySelector('label[for="recruitmentData"]');
-                fileInput.value = '';
-                fileLabel.innerHTML = `
-                    <span class="upload-icon">📂</span>
-                    <span>Choose Excel or CSV file</span>
-                    <span class="upload-hint">Drag & drop or click to browse</span>
-                `;
-                fileLabel.classList.remove('file-selected');
-            };
+            // Create a header similar to minimized header but for expanded state
+            let expandedHeader = uploadSection.querySelector('.expanded-header');
+            if (!expandedHeader) {
+                expandedHeader = document.createElement('div');
+                expandedHeader.className = 'expanded-header';
+                uploadSection.insertBefore(expandedHeader, uploadSection.querySelector('h2').nextSibling);
+            }
             
-            // Insert after the upload button
-            const uploadBtn = uploadForm.querySelector('.btn-primary');
-            uploadBtn.parentNode.insertBefore(keepFileBtn, uploadBtn.nextSibling);
+            const fileName = currentData?.filename || 'File uploaded';
+            expandedHeader.innerHTML = `
+                <div class="minimized-content">
+                    <span class="upload-icon">✅</span>
+                    <span class="file-info">${fileName} - Successfully processed</span>
+                    <button class="expand-btn keep-current-btn" onclick="keepCurrentFile()">↩️ Keep Current File</button>
+                </div>
+            `;
         }
     }
 

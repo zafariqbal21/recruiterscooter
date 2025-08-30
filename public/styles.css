@@ -149,10 +149,16 @@ label[for="recruitmentData"].file-selected .upload-hint {
     margin-bottom: 30px;
 }
 
-.minimized-header {
+.minimized-header,
+.expanded-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
+    margin-bottom: 20px;
+    padding: 15px;
+    background: var(--bg-tertiary);
+    border-radius: var(--border-radius);
+    border: 1px solid var(--success);
 }
 
 .minimized-content {
@@ -230,6 +236,17 @@ label[for="recruitmentData"].file-selected .upload-hint {
     background: #d69e2e;
     border-color: #d69e2e;
     transform: translateY(-1px);
+}
+
+.keep-current-btn {
+    background: var(--warning) !important;
+    color: white !important;
+    border: 1px solid var(--warning) !important;
+}
+
+.keep-current-btn:hover {
+    background: #d69e2e !important;
+    border-color: #d69e2e !important;
 }
 
 /* Navigation Tabs */
