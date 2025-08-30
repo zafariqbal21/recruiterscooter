@@ -1,0 +1,205 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recruitment Analytics Dashboard</title>
+    <link rel="stylesheet" href="/styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📊 Recruitment Analytics Dashboard</h1>
+            <p>Upload and analyze your recruitment data with interactive charts and insights</p>
+        </header>
+
+        <!-- File Upload Section -->
+        <section class="upload-section">
+            <h2>📁 Upload Recruitment Data</h2>
+            <form id="uploadForm" enctype="multipart/form-data">
+                <div class="file-input-wrapper">
+                    <input type="file" id="recruitmentData" name="recruitmentData" accept=".xlsx,.xls,.csv" required>
+                    <label for="recruitmentData">
+                        <span class="upload-icon">📂</span>
+                        <span>Choose Excel or CSV file</span>
+                        <span class="upload-hint">Drag & drop or click to browse</span>
+                    </label>
+                </div>
+                <button type="submit" class="btn-primary">
+                    <span>Upload & Analyze</span>
+                </button>
+            </form>
+            
+            <div class="upload-status" id="uploadStatus" style="display: none;">
+                <div id="uploadResults"></div>
+            </div>
+        </section>
+
+        <!-- Navigation Tabs -->
+        <nav class="nav-tabs">
+            <button class="tab-btn active" data-tab="overview">📊 Overview</button>
+            <button class="tab-btn" data-tab="positions">🎯 Position Status</button>
+            <button class="tab-btn" data-tab="recruiters">👥 Recruiter Performance</button>
+            <button class="tab-btn" data-tab="clients">🏢 Client Analytics</button>
+            <button class="tab-btn" data-tab="timeline">📈 Timeline Trends</button>
+            <button class="tab-btn" data-tab="data">📋 Raw Data</button>
+        </nav>
+
+        <!-- Tab Content -->
+        <div class="tab-content">
+            <!-- Overview Tab -->
+            <div id="overview" class="tab-pane active">
+                <div class="metrics-grid">
+                    <div class="metric-card">
+                        <div class="metric-icon">📄</div>
+                        <div class="metric-info">
+                            <h3>Total Records</h3>
+                            <span class="metric-value" id="totalRecords">-</span>
+                        </div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-icon">🎯</div>
+                        <div class="metric-info">
+                            <h3>Total Positions</h3>
+                            <span class="metric-value" id="totalPositions">-</span>
+                        </div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-icon">📝</div>
+                        <div class="metric-info">
+                            <h3>Total CVs</h3>
+                            <span class="metric-value" id="totalCVs">-</span>
+                        </div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-icon">👤</div>
+                        <div class="metric-info">
+                            <h3>Active Recruiters</h3>
+                            <span class="metric-value" id="activeRecruiters">-</span>
+                        </div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-icon">🏢</div>
+                        <div class="metric-info">
+                            <h3>Active Clients</h3>
+                            <span class="metric-value" id="activeClients">-</span>
+                        </div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-icon">⏸️</div>
+                        <div class="metric-info">
+                            <h3>Positions On Hold</h3>
+                            <span class="metric-value" id="positionsOnHold">-</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Position Status Tab -->
+            <div id="positions" class="tab-pane">
+                <div class="chart-section">
+                    <h3>Position Status Distribution</h3>
+                    <div class="chart-container">
+                        <canvas id="positionStatusChart"></canvas>
+                    </div>
+                </div>
+                <div class="chart-section">
+                    <h3>Positions by Client</h3>
+                    <div class="chart-container">
+                        <canvas id="positionsByClientChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recruiter Performance Tab -->
+            <div id="recruiters" class="tab-pane">
+                <div class="chart-section">
+                    <h3>CVs Submitted by Recruiter</h3>
+                    <div class="chart-container">
+                        <canvas id="recruiterPerformanceChart"></canvas>
+                    </div>
+                </div>
+                <div class="chart-section">
+                    <h3>Positions Handled by Recruiter</h3>
+                    <div class="chart-container">
+                        <canvas id="recruiterPositionsChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Client Analytics Tab -->
+            <div id="clients" class="tab-pane">
+                <div class="chart-section">
+                    <h3>Client Activity Overview</h3>
+                    <div class="chart-container">
+                        <canvas id="clientActivityChart"></canvas>
+                    </div>
+                </div>
+                <div class="chart-section">
+                    <h3>Average Days by Client</h3>
+                    <div class="chart-container">
+                        <canvas id="clientDaysChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Timeline Trends Tab -->
+            <div id="timeline" class="tab-pane">
+                <div class="chart-section">
+                    <h3>Requisitions Over Time</h3>
+                    <div class="chart-container">
+                        <canvas id="timelineChart"></canvas>
+                    </div>
+                </div>
+                <div class="chart-section">
+                    <h3>Monthly CV Submissions</h3>
+                    <div class="chart-container">
+                        <canvas id="monthlyCVChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Raw Data Tab -->
+            <div id="data" class="tab-pane">
+                <div class="data-controls">
+                    <input type="text" id="searchInput" placeholder="Search data..." class="search-input">
+                    <button id="exportBtn" class="btn-secondary">📤 Export Data</button>
+                </div>
+                <div class="table-container">
+                    <table id="dataTable">
+                        <thead>
+                            <tr>
+                                <th>Recruiter</th>
+                                <th>BDM</th>
+                                <th>Client Name</th>
+                                <th>Position Name</th>
+                                <th>No Of Position</th>
+                                <th>Requisition Date</th>
+                                <th>Number Of CVs</th>
+                                <th>On Hold Date</th>
+                                <th>Days</th>
+                                <th>Remarks</th>
+                            </tr>
+                        </thead>
+                        <tbody id="dataTableBody">
+                            <tr>
+                                <td colspan="10" class="no-data">No data available. Please upload an Excel file to view data.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Loading Spinner -->
+        <div id="loadingSpinner" class="spinner" style="display: none;">
+            <div class="spinner-circle"></div>
+            <p>Processing your data...</p>
+        </div>
+    </div>
+
+    <script src="/script.js"></script>
+</body>
+</html>
