@@ -59,6 +59,18 @@ header p {
     font-size: 1.1rem;
 }
 
+.author-credit {
+    color: var(--text-secondary) !important;
+    font-size: 0.9rem !important;
+    margin-top: 10px;
+    font-style: italic;
+}
+
+.author-credit strong {
+    color: var(--accent-primary);
+    font-weight: 600;
+}
+
 section {
     background: var(--bg-secondary);
     margin-bottom: 30px;
